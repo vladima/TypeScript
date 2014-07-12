@@ -1,0 +1,17 @@
+==== tests/cases/compiler/classAndInterfaceWithSameName.ts (2 errors) ====
+    class C { foo: string; }
+    interface C { foo: string; } // error
+              ~
+!!! classAndInterfaceWithSameName.ts(2,11): error TS2000: Duplicate identifier 'C'.
+    
+    module M {
+        class D {
+            bar: string;
+        }
+    
+        interface D { // error
+                  ~
+!!! classAndInterfaceWithSameName.ts(9,15): error TS2000: Duplicate identifier 'D'.
+            bar: string;
+        }
+    }

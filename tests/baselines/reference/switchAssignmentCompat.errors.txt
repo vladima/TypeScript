@@ -1,0 +1,10 @@
+==== tests/cases/compiler/switchAssignmentCompat.ts (1 errors) ====
+    class Foo { }
+    
+    switch (0) {
+        case Foo: break; // Error expected
+             ~~~
+!!! switchAssignmentCompat.ts(4,10): error TS2012: Type 'typeof Foo' is not assignable to type 'number':
+!!! 	Type 'Number' is missing property 'prototype' from type 'typeof Foo'.
+    }
+    

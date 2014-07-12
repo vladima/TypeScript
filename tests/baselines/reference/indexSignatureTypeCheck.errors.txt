@@ -1,0 +1,29 @@
+==== tests/cases/compiler/indexSignatureTypeCheck.ts (5 errors) ====
+    interface IPropertySet {
+    
+        [index: string]: any;
+    
+    }
+    
+    
+    var ps: IPropertySet = null;
+    var index: any = "hello";
+    ps[index] = 12;
+    
+    
+    interface indexErrors {
+        [p2?: string];
+         ~~~~~~~~~~~
+!!! indexSignatureTypeCheck.ts(14,6): error TS1019: Index signature parameter cannot have a question mark.
+        [...p3: any[]];
+         ~~~~~~~~~~~~
+!!! indexSignatureTypeCheck.ts(15,6): error TS1017: Index signatures cannot have rest parameters.
+        [p4: string, p5?: string];
+        ~
+!!! indexSignatureTypeCheck.ts(16,5): error TS1096: Index signature must have exactly one parameter.
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
+!!! indexSignatureTypeCheck.ts(16,5): error TS2232: Duplicate string index signature.
+        [p6: string, ...p7: any[]];
+        ~
+!!! indexSignatureTypeCheck.ts(17,5): error TS1096: Index signature must have exactly one parameter.
+    }

@@ -1,0 +1,12 @@
+==== tests/cases/compiler/complicatedGenericRecursiveBaseClassReference.ts (3 errors) ====
+    class S18<B, A, C> extends S18<A[], { S19: A; (): A }[], C[]>
+          ~~~
+!!! complicatedGenericRecursiveBaseClassReference.ts(1,7): error TS2100: Type 'S18<B, A, C>' recursively references itself as a base type.
+    {
+    }
+    (new S18(123)).S18 = 0;
+         ~~~
+!!! complicatedGenericRecursiveBaseClassReference.ts(4,6): error TS2081: Supplied parameters do not match any signature of call target.
+         ~~~
+!!! complicatedGenericRecursiveBaseClassReference.ts(4,6): error TS2085: Could not select overload for 'new' expression.
+    

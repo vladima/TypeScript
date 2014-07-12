@@ -1,0 +1,174 @@
+<!DOCTYPE html> 
+
+<html>
+<head>
+    <title>TypeScript Web harness</title>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.9.1.js"></script>
+    <script src='perfCompiler.js'></script>
+    <script>
+        var repeat = 1;
+        var batch;
+
+        if (!batch) {
+            batch = new BatchCompiler();
+        }
+
+        function appendTime(message, time) {
+            var res = message + ": " + time;
+            var div = document.createElement('div');
+            div.innerText = res;
+            document.body.appendChild(div);
+        }
+
+        function clear1() {
+            $("div").remove();
+        }
+
+        function run(f) {
+            var start = new Date().getTime();
+            for (var i = 0; i < repeat; i++) {
+                f();
+
+                // If we're repeating multiple times, then ignore the first run so we don't count 
+                // the time taken to JIT.
+                if (repeat > 1 && i === 0) {
+                    start = new Date().getTime();
+                }
+            }
+
+            var end = new Date().getTime();
+            if (repeat > 1) {
+                appendTime("Average", (end - start) / (repeat - 1));
+            }
+        }
+
+        var currentCompilerSourcesTree;
+        var currentLibDTSTree;
+
+        function parseCompilerSources() {
+            run(function () {
+                var start = new Date().getTime();
+
+                currentCompilerSourcesTree = batch.parseCompilerSources();
+
+                var end = new Date().getTime();
+                appendTime("Time: ", end - start);
+
+                //for (var i = 0; i < currentCompilerSourcesTree.length; i++) {
+                //    collectTokenStatistics(currentCompilerSourcesTree[i].sourceUnit());
+                //}
+            });
+        }
+
+        // 1, 2, 4, 8, 16
+        //var powersOfTwo = [1];
+        //var fullStartHistogram = [];
+        //var fullWidthHistogram = [];
+        //var isKeywordConvertedToIdentifier = 0;
+        //var leadingTrivia = 0;
+        //var trailingTrivia = 0;
+        //var leadingAndTrailingTrivia = 0;
+        //var noTrivia = 0;
+        //var j = 1;
+        //for (var i = 0; i < 30; i++) {
+        //    powersOfTwo[i] = j;
+        //    j = j * 2;
+
+        //    fullStartHistogram.push(0);
+        //    fullWidthHistogram.push(0);
+        //}
+
+        //var withOneField = [];
+        //var withTwoField = [];
+
+        //var common = {}
+        //for (var i = 0; i < 300000; i++) {
+        //    withOneField.push(new OneField(common, {}, i));
+        //    withTwoField.push(new TwoField(common, {}, i, i));
+        //}
+
+        function collectTokenStatistics(element) {
+            if (!element) {
+                return;
+            }
+
+            if (TypeScript.isToken(element)) {
+                var fullStart = TypeScript.fullStart(element);
+                var fullWidth = TypeScript.fullWidth(element);
+
+                for (var i = 0; i < powersOfTwo.length; i++) {
+                    if (fullStart < powersOfTwo[i]) {
+                        fullStartHistogram[i]++;
+                    }
+
+                    if (fullWidth < powersOfTwo[i]) {
+                        fullWidthHistogram[i]++;
+                    }
+                }
+
+                if (element.isKeywordConvertedToIdentifier()) {
+                    isKeywordConvertedToIdentifier++;
+                }
+
+                if (element.hasLeadingTrivia() && element.hasTrailingTrivia()) {
+                    leadingAndTrailingTrivia++;
+                }
+                else if (element.hasLeadingTrivia()) {
+                    leadingTrivia++;
+                }
+                else if (element.hasTrailingTrivia()) {
+                    trailingTrivia++;
+                }
+                else {
+                    noTrivia++;
+                }
+            }
+
+            for (var i = 0, n = TypeScript.childCount(element) ; i < n; i++) {
+                var child = TypeScript.childAt(element, i);
+                collectTokenStatistics(child);
+            }
+        }
+
+        function parseLibDTS() {
+            run(function () {
+                var start = new Date().getTime();
+
+                currentLibDTSTree = batch.parseLibDTSSource();
+
+                var end = new Date().getTime();
+                appendTime("Time: ", end - start);
+            });
+        }
+
+        function incrementalParseLibDTS() {
+            if (!currentLibDTSTree) {
+                currentLibDTSTree = batch.parseLibDTSSource();
+            }
+
+            run(function () {
+                var start = new Date().getTime();
+                currentLibDTSTree = batch.incrementalParseLibDTSSource(currentLibDTSTree);
+                var end = new Date().getTime();
+                appendTime("Time: ", end - start);
+            });
+        }
+
+        function fullCompile() {
+            var start = new Date().getTime();
+            compile();
+            var end = new Date().getTime();
+            appendTime("Time: ", end - start);
+        }
+
+    </script>
+</head>
+<body>
+    <h1>TypeScript Perf Testbed</h1>
+    <button onclick="parseCompilerSources()">Parse Compiler Sources</button>
+    <button onclick="parseLibDTS()">Parse lib.d.ts</button>
+    <button onclick="incrementalParseLibDTS()">Incremental Parse lib.d.ts</button>
+    <button onclick="fullCompile()">Compile</button>
+    <button onclick="clear1()">Clear</button>
+</body>
+</html>

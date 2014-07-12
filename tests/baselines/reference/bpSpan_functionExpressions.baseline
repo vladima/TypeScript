@@ -1,0 +1,427 @@
+
+**Pos: 0 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 1 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 2 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 3 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 4 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 5 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 6 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 7 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 8 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 9 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 10 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 11 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 12 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 13 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 14 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 15 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 16 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 17 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 18 SpanInfo: {"start":0,"length":17}
+** Statement: var greetings = 0
+**Pos: 19 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 20 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 21 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 22 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 23 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 24 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 25 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 26 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 27 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 28 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 29 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 30 SpanInfo: {"start":19,"length":84}
+** Statement: var greet = (greeting: string): number => {
+    greetings++;
+    return greetings;
+}
+**Pos: 31 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 32 SpanInfo: null
+** Statement: 
+**Pos: 33 SpanInfo: null
+** Statement: 
+**Pos: 34 SpanInfo: null
+** Statement: 
+**Pos: 35 SpanInfo: null
+** Statement: 
+**Pos: 36 SpanInfo: null
+** Statement: 
+**Pos: 37 SpanInfo: null
+** Statement: 
+**Pos: 38 SpanInfo: null
+** Statement: 
+**Pos: 39 SpanInfo: null
+** Statement: 
+**Pos: 40 SpanInfo: null
+** Statement: 
+**Pos: 41 SpanInfo: null
+** Statement: 
+**Pos: 42 SpanInfo: null
+** Statement: 
+**Pos: 43 SpanInfo: null
+** Statement: 
+**Pos: 44 SpanInfo: null
+** Statement: 
+**Pos: 45 SpanInfo: null
+** Statement: 
+**Pos: 46 SpanInfo: null
+** Statement: 
+**Pos: 47 SpanInfo: null
+** Statement: 
+**Pos: 48 SpanInfo: null
+** Statement: 
+**Pos: 49 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 50 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 51 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 52 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 53 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 54 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 55 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 56 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 57 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 58 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 59 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 60 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 61 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 62 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 63 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 64 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 65 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 66 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 67 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 68 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 69 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 70 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 71 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 72 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 73 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 74 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 75 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 76 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 77 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 78 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 79 SpanInfo: {"start":67,"length":11}
+** Statement: greetings++
+**Pos: 80 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 81 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 82 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 83 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 84 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 85 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 86 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 87 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 88 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 89 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 90 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 91 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 92 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 93 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 94 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 95 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 96 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 97 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 98 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 99 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 100 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 101 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 102 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 103 SpanInfo: {"start":84,"length":16}
+** Statement: return greetings
+**Pos: 104 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 105 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 106 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 107 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 108 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 109 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 110 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 111 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 112 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 113 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 114 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 115 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 116 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 117 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 118 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 119 SpanInfo: {"start":104,"length":14}
+** Statement: greet("Hello")
+**Pos: 120 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 121 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 122 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 123 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 124 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 125 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 126 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 127 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 128 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 129 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 130 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 131 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 132 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 133 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 134 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 135 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 136 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 137 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 138 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 139 SpanInfo: {"start":120,"length":37}
+** Statement: var incrGreetings = () => greetings++
+**Pos: 140 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 141 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 142 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 143 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 144 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 145 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 146 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 147 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 148 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 149 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 150 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 151 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 152 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 153 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 154 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 155 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 156 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 157 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 158 SpanInfo: {"start":146,"length":11}
+** Statement: greetings++
+**Pos: 159 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 160 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 161 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 162 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 163 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 164 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 165 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 166 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 167 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 168 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 169 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 170 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 171 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 172 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 173 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 174 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 175 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 176 SpanInfo: {"start":159,"length":35}
+** Statement: var greetNewMsg = msg => greet(msg)
+**Pos: 177 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 178 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 179 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 180 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 181 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 182 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 183 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 184 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 185 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 186 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 187 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 188 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 189 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 190 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 191 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 192 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 193 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)
+**Pos: 194 SpanInfo: {"start":184,"length":10}
+** Statement: greet(msg)

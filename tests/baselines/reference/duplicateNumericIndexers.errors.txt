@@ -1,0 +1,46 @@
+==== tests/cases/compiler/duplicateNumericIndexers.ts (6 errors) ====
+    // it is an error to have duplicate index signatures of the same kind in a type
+    
+    interface Number {
+        [x: number]: string;
+        [x: number]: string;
+        ~~~~~~~~~~~~~~~~~~~
+!!! duplicateNumericIndexers.ts(5,5): error TS2233: Duplicate number index signature.
+    }
+    
+    interface String {
+        [x: number]: string;
+        ~~~~~~~~~~~~~~~~~~~
+!!! duplicateNumericIndexers.ts(9,5): error TS2233: Duplicate number index signature.
+        [x: number]: string;
+    }
+    
+    interface Array<T> {
+        [x: number]: T;
+        ~~~~~~~~~~~~~~
+!!! duplicateNumericIndexers.ts(14,5): error TS2233: Duplicate number index signature.
+        [x: number]: T;
+    }
+    
+    class C {
+        [x: number]: string;
+        [x: number]: string;
+        ~~~~~~~~~~~~~~~~~~~
+!!! duplicateNumericIndexers.ts(20,5): error TS2233: Duplicate number index signature.
+    }
+    
+    interface I {
+        [x: number]: string;
+        [x: number]: string;
+        ~~~~~~~~~~~~~~~~~~~
+!!! duplicateNumericIndexers.ts(25,5): error TS2233: Duplicate number index signature.
+    }
+    
+    var a: {
+        [x: number]: string;
+        [x: number]: string;
+        ~~~~~~~~~~~~~~~~~~~
+!!! duplicateNumericIndexers.ts(30,5): error TS2233: Duplicate number index signature.
+    }
+    
+    

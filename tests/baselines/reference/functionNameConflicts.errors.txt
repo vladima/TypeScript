@@ -1,0 +1,40 @@
+==== tests/cases/compiler/functionNameConflicts.ts (6 errors) ====
+    //Function and variable of the same name in same declaration space
+    //Function overload with different name from implementation signature 
+    
+    module M {
+        function fn1() { }
+        var fn1;
+            ~~~
+!!! functionNameConflicts.ts(6,9): error TS2000: Duplicate identifier 'fn1'.
+    
+        var fn2;
+        function fn2() { }
+                 ~~~
+!!! functionNameConflicts.ts(9,14): error TS2000: Duplicate identifier 'fn2'.
+    }
+    
+    function fn3() { }
+    var fn3;
+        ~~~
+!!! functionNameConflicts.ts(13,5): error TS2000: Duplicate identifier 'fn3'.
+    
+    function func() {
+        var fn4;
+        function fn4() { }
+                 ~~~
+!!! functionNameConflicts.ts(17,14): error TS2000: Duplicate identifier 'fn4'.
+    
+        function fn5() { }
+        var fn5;
+            ~~~
+!!! functionNameConflicts.ts(20,9): error TS2000: Duplicate identifier 'fn5'.
+    }
+    
+    function over();
+    function overrr() {
+             ~~~~~~
+!!! functionNameConflicts.ts(24,10): error TS2239: Function overload name must be 'over'.
+    
+    }
+    

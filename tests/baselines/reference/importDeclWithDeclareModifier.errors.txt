@@ -1,0 +1,12 @@
+==== tests/cases/compiler/importDeclWithDeclareModifier.ts (2 errors) ====
+    module x {
+        interface c {
+        }
+    }
+    declare export import a = x.c;
+    ~~~~~~~
+!!! importDeclWithDeclareModifier.ts(5,1): error TS1079: A 'declare' modifier cannot be used with an import declaration.
+                                ~
+!!! importDeclWithDeclareModifier.ts(5,29): error TS2178: Module 'x' has no exported member 'c'.
+    var b: a;
+    

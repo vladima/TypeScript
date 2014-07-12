@@ -1,0 +1,12 @@
+==== tests/cases/compiler/ambientGetters.ts (2 errors) ====
+    declare class A {
+        get length() : number;
+                             ~
+!!! ambientGetters.ts(2,26): error TS1005: '{' expected.
+            ~~~~~~
+!!! ambientGetters.ts(2,9): error TS2126: Getters must return a value.
+    }
+    
+    declare class B {
+        get length() { return 0; }
+    }
