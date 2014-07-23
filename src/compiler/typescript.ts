@@ -211,8 +211,19 @@ module TypeScript {
     export class DocumentRegistry implements IDocumentRegistry {
         private buckets: IIndexable<StringHashTable<DocumentRegistryEntry>> = {};
 
+        private getValue(settings: ImmutableCompilationSettings, key: string): any {
+            var value = (<any>settings)[key]();
+            if (value === undefined) {
+                return (<any>ImmutableCompilationSettings.defaultSettings())[key]();
+            }
+
+            return value;
+        }
+
         private getKeyFromCompilationSettings(settings: ImmutableCompilationSettings): string {
-            return "_" + settings.propagateEnumConstants().toString() + "|" + settings.allowAutomaticSemicolonInsertion().toString() + "|" + LanguageVersion[settings.codeGenTarget()];
+            return "_" + this.getValue(settings, "propagateEnumConstants").toString() + "|" +
+                this.getValue(settings, "allowAutomaticSemicolonInsertion") + "|" +
+                LanguageVersion[this.getValue(settings, "codeGenTarget")];
         }
 
         private getBucketForCompilationSettings(settings: ImmutableCompilationSettings, createIfMissing: boolean): StringHashTable<DocumentRegistryEntry> {

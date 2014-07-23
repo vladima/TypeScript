@@ -420,13 +420,17 @@ module TypeScript.Services {
             return false;
         }
 
-        private isLetterOrDigit(char: number): boolean {
-            return (char >= TypeScript.CharacterCodes.a && char <= TypeScript.CharacterCodes.z) ||
-                (char >= TypeScript.CharacterCodes.A && char <= TypeScript.CharacterCodes.Z) ||
-                (char >= TypeScript.CharacterCodes._0 && char <= TypeScript.CharacterCodes._9) ||
+        private isIdentifierChar(char: number): boolean {
+            return this.isLetterOrDigit(char) ||
                 char === TypeScript.CharacterCodes._ ||
                 char === TypeScript.CharacterCodes.$ ||
                 (char > 127 && TypeScript.Unicode.isIdentifierPart(char, TypeScript.LanguageVersion.EcmaScript5));
+        }
+
+        private isLetterOrDigit(char: number): boolean {
+            return (char >= TypeScript.CharacterCodes.a && char <= TypeScript.CharacterCodes.z) ||
+                (char >= TypeScript.CharacterCodes.A && char <= TypeScript.CharacterCodes.Z) ||
+                (char >= TypeScript.CharacterCodes._0 && char <= TypeScript.CharacterCodes._9);
         }
 
         private getPossibleSymbolReferencePositions(fileName: string, symbolName: string): number[] {
@@ -453,8 +457,8 @@ module TypeScript.Services {
                 // before and after it have to be a non-identifier char).
                 var endPosition = position + symbolNameLength;
 
-                if ((position <= 0 || !this.isLetterOrDigit(text.charCodeAt(position - 1))) &&
-                    (endPosition >= sourceLength || !this.isLetterOrDigit(text.charCodeAt(endPosition)))) {
+                if ((position <= 0 || !this.isIdentifierChar(text.charCodeAt(position - 1))) &&
+                    (endPosition >= sourceLength || !this.isIdentifierChar(text.charCodeAt(endPosition)))) {
 
                     // Found a real match.  Keep searching.  
                     positions.push(position);
@@ -1958,17 +1962,19 @@ module TypeScript.Services {
 
             // TODO comments can appear in one of the following forms:
             //
-            //  1)      // TODO
-            //  2)      /* TODO
+            //  1)      // TODO     or  /////////// TODO
+            //
+            //  2)      /* TODO     or  /********** TODO
+            //
             //  3)      /*
             //           *   TODO
             //           */
             //
             // The following three regexps are used to match the start of the text up to the TODO
             // comment portion.
-            var singleLineCommentStart = "(?:\\/\\/\\s*)";
-            var multiLineCommentStart = "(?:\\/\\*\\s*)";
-            var anyNumberOfSpacesAndAsterixesAtStartOfLine = "(?:^(?:\\s|\\*)*)";
+            var singleLineCommentStart = /(?:\/\/+\s*)/.source;
+            var multiLineCommentStart = /(?:\/\*+\s*)/.source;
+            var anyNumberOfSpacesAndAsterixesAtStartOfLine = /(?:^(?:\s|\*)*)/.source;
 
             // Match any of the above three TODO comment start regexps.
             // Note that the outermost group *is* a capture group.  We want to capture the preamble
@@ -1986,24 +1992,23 @@ module TypeScript.Services {
             var literals = "(?:" +descriptors.map(d => "(" + this.escapeRegExp(d.text) + ")").join("|") + ")";
 
             // After matching a descriptor literal, the following regexp matches the rest of the 
-            // text up to the end of the line.  We don't want to match something like 'TODOBY', so
-            // we ask for a non word character (\W) to follow the match if we're not at the end of
-            // the line.
-            var postamble = "(?:(?:\\W.*$)|$)";
+            // text up to the end of the line (or */).
+            var endOfLineOrEndOfComment = /(?:$|\*\/)/.source
+            var messageRemainder = /(?:.*?)/.source
 
             // This is the portion of the match we'll return as part of the TODO comment result. We
-            // match the literal portion up to the end of the line.
-            var messagePortion = "(" + literals + postamble + ")";
-            var regExpString = preamble + messagePortion;
+            // match the literal portion up to the end of the line or end of comment.
+            var messagePortion = "(" + literals + messageRemainder + ")";
+            var regExpString = preamble + messagePortion + endOfLineOrEndOfComment;
 
             // The final regexp will look like this:
-            // /((?:\/\/\s*)|(?:\/\*\s*)|(?:^(?:\s|\*)*))((?:(TODO\(jason\))|(HACK))(?:(?:\W.*$)|$))/gim
+            // /((?:\/\/+\s*)|(?:\/\*+\s*)|(?:^(?:\s|\*)*))((?:(TODO\(jason\))|(HACK))(?:.*?))(?:$|\*\/)/gim
 
             // The flags of the regexp are important here.
             //  'g' is so that we are doing a global search and can find matches several times
             //  in the input.
             //
-            //  'i' is for case insensitivity (We do this to match C#).
+            //  'i' is for case insensitivity (We do this to match C# TODO comment code).
             //
             //  'm' is so we can find matches in a multiline input.
             return new RegExp(regExpString, "gim");
@@ -2068,7 +2073,6 @@ module TypeScript.Services {
                         continue;
                     }
 
-                    var message = matchArray[2];
                     var descriptor: TodoCommentDescriptor = undefined;
                     for (var i = 0, n = descriptors.length; i < n; i++) {
                         if (matchArray[i + firstDescriptorCaptureIndex]) {
@@ -2077,6 +2081,13 @@ module TypeScript.Services {
                     }
                     Debug.assert(descriptor);
 
+                    // We don't want to match something like 'TODOBY', so we make sure a non 
+                    // letter/digit follows the match.
+                    if (this.isLetterOrDigit(fileContents.charCodeAt(matchPosition + descriptor.text.length))) {
+                        continue;
+                    }
+
+                    var message = matchArray[2];
                     result.push(new TodoComment(descriptor, message, matchPosition));
                 }
             }
