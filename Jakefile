@@ -33,6 +33,7 @@ var compilerSources = [
     "parser.ts",
     "binder.ts",
     "checker.ts",
+    "flow.ts",
     "emitter.ts",
     "commandLineParser.ts",
     "tc.ts",

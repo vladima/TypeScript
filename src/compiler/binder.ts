@@ -70,6 +70,8 @@ module ts {
                 case SyntaxKind.ConstructSignature: return "__new";
                 case SyntaxKind.IndexSignature: return "__index";
             }
+
+            return undefined;
         }
 
         function getDisplayName(node: Declaration): string {

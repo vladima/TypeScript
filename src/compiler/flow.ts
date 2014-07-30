@@ -5,15 +5,18 @@
 /// <reference path="binder.ts"/>
 
 module ts {
-    export function checkFlow(decl: FunctionDeclaration, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void) {
+    export function checkFlow(decl: FunctionDeclaration, noImplicitReturns: boolean, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void) {
         if (!decl.body) {
             return;
         }
 
-        checkControlFlow(decl, error);
+        var finalState = checkControlFlow(decl, error);
+        if (noImplicitReturns && finalState === ControlFlowState.Reachable) {
+            error(decl.name || decl, Diagnostics.Not_all_code_paths_return_a_value);
+        }
     }
 
-    function checkControlFlow(decl: FunctionDeclaration, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void) {
+    function checkControlFlow(decl: FunctionDeclaration, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void): ControlFlowState {
         var state = ControlFlowState.Reachable;
         var trueState = ControlFlowState.Default;
         var falseState = ControlFlowState.Default;
@@ -81,7 +84,9 @@ module ts {
                 join();
                 setSplitState(ControlFlowState.Unreachable, state);
             }
-            split();
+            else {
+                split();
+            }
         }
 
         // current assumption: only statements affect CF
@@ -163,6 +168,7 @@ module ts {
         }
 
         check(decl.body);
+        return state;
     }
 
     enum ControlFlowState {

@@ -204,6 +204,7 @@ module ts {
                 }
             }
 
+            return undefined;
             // return undefined if we can't find a symbol.
         }
 
@@ -404,6 +405,7 @@ module ts {
                 return;
             }
             error(moduleLiteral, Diagnostics.Cannot_find_external_module_0, moduleName);
+            return undefined;
         }
 
         function getResolvedExportSymbol(moduleSymbol: Symbol): Symbol {
@@ -529,6 +531,8 @@ module ts {
                     return <ConstructorDeclaration>member;
                 }
             }
+
+            return undefined;
         }
 
         function createType(flags: TypeFlags): Type {
@@ -946,6 +950,7 @@ module ts {
                     }
                 }
                 Debug.fail("getContainingModule cant reach here");
+                return undefined;
             }
 
             function isUsedInExportAssignment(node: Node) {
@@ -990,6 +995,8 @@ module ts {
                         });
                     }
                 }
+
+                return undefined;
             }
 
             function determineIfDeclarationIsVisible() {
@@ -1047,6 +1054,7 @@ module ts {
                 }
                 return links.isVisible;
             }
+            return undefined;
         }
 
         function getApparentType(type: Type): ApparentType {
@@ -1654,6 +1662,8 @@ module ts {
                     }
                 }
             }
+
+            return undefined;
         }
 
         function getPropertyOfApparentType(type: ApparentType, name: string): Symbol {
@@ -1671,6 +1681,7 @@ module ts {
                 }
                 return getPropertyOfType(globalObjectType, name);
             }
+            return undefined;
         }
 
         function getSignaturesOfType(type: Type, kind: SignatureKind): Signature[] {
@@ -1686,6 +1697,7 @@ module ts {
                 var resolved = resolveObjectTypeMembers(<ObjectType>type);
                 return kind === IndexKind.String ? resolved.stringIndexType : resolved.numberIndexType;
             }
+            return undefined;
         }
 
         // Return list of type parameters with duplicates removed (duplicate identifier errors are generated in the actual
@@ -2032,6 +2044,7 @@ module ts {
                             return declaration;
                     }
                 }
+                return undefined;
             }
 
             var symbol = resolveName(undefined, name, SymbolFlags.Type, Diagnostics.Cannot_find_global_type_0, name);
@@ -4133,6 +4146,7 @@ module ts {
             if (!(links.flags & NodeCheckFlags.TypeChecked)) {
                 var signature = getSignaturesOfType(type, SignatureKind.Call)[0];
                 var contextualSignature = getContextualSignature(contextualType);
+                var noImplicitReturns = false;
                 if (contextualSignature) {
                     if (!node.typeParameters && !forEach(node.parameters, p => p.type)) {
                         assignContextualParameterTypes(signature, contextualSignature, contextualMapper || identityMapper);
@@ -4145,11 +4159,12 @@ module ts {
                         }
                     }
                     else {
-                        checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
+                        noImplicitReturns = node.type && getTypeFromTypeNode(node.type) !== voidType;
+                        //checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
                     }
                 }
 
-                checkFlow(node, error);
+                checkFlow(node, noImplicitReturns, error);
 
                 checkSignatureDeclaration(node);
                 if (node.body.kind === SyntaxKind.FunctionBlock) {
@@ -5046,11 +5061,12 @@ module ts {
             }
 
             checkSourceElement(node.body);
-            if (node.type && !isAccessor(node.kind)) {
-                checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
-            }
+            var noImplicitReturns = node.type && !isAccessor(node.kind) && getTypeFromTypeNode(node.type) !== voidType;
+            //if (node.type && !isAccessor(node.kind)) {
+            //    checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
+            //}
 
-            checkFlow(node, error);
+            checkFlow(node, noImplicitReturns, error);
 
             // If there is no body and no explicit return type, then report an error.
             if (program.getCompilerOptions().noImplicitAny && !node.body && !node.type) {
