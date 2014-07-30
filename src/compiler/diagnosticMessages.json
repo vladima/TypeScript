@@ -1244,5 +1244,13 @@
     "No input files specified.": {
         "category": "Error",
         "code": -9999999
+    },
+    "Unreachable code detected.": {
+        "category": "Error",
+        "code": -9999999
+    },
+    "Not all code paths return a value.": {
+        "category": "Error",
+        "code": -9999999
     }
 }

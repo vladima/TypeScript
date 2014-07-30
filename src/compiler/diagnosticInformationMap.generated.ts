@@ -306,5 +306,7 @@ module ts {
         Unable_to_open_file_0: { code: -9999999, category: DiagnosticCategory.Error, key: "Unable to open file {0}." },
         Corrupted_locale_file_0: { code: -9999999, category: DiagnosticCategory.Error, key: "Corrupted locale file {0}." },
         No_input_files_specified: { code: -9999999, category: DiagnosticCategory.Error, key: "No input files specified." },
+        Unreachable_code_detected: { code: -9999999, category: DiagnosticCategory.Error, key: "Unreachable code detected." },
+        Not_all_code_paths_return_a_value: { code: -9999999, category: DiagnosticCategory.Error, key: "Not all code paths return a value." },
     };
 }

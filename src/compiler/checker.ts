@@ -3,6 +3,7 @@
 /// <reference path="scanner.ts"/>
 /// <reference path="parser.ts"/>
 /// <reference path="binder.ts"/>
+/// <reference path="flow.ts"/>
 /// <reference path="emitter.ts"/>
 
 module ts {
@@ -4147,6 +4148,9 @@ module ts {
                         checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
                     }
                 }
+
+                checkFlow(node, error);
+
                 checkSignatureDeclaration(node);
                 if (node.body.kind === SyntaxKind.FunctionBlock) {
                     checkSourceElement(node.body);
@@ -5045,6 +5049,8 @@ module ts {
             if (node.type && !isAccessor(node.kind)) {
                 checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
             }
+
+            checkFlow(node, error);
 
             // If there is no body and no explicit return type, then report an error.
             if (program.getCompilerOptions().noImplicitAny && !node.body && !node.type) {
