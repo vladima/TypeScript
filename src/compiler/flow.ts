@@ -12,7 +12,8 @@ module ts {
 
         var finalState = checkControlFlow(decl, error);
         if (noImplicitReturns && finalState === ControlFlowState.Reachable) {
-            error(decl.name || decl, Diagnostics.Not_all_code_paths_return_a_value);
+            var errorNode: Node = decl.name || decl;
+            error(errorNode, Diagnostics.Not_all_code_paths_return_a_value);
         }
     }
 
@@ -43,12 +44,12 @@ module ts {
 
         function join() {
             if (isInSplit) {
-                setState(combine(trueState, falseState));
+                setState(or(trueState, falseState));
                 isInSplit = false;
             }
         }
 
-        function combine(s1: ControlFlowState, s2: ControlFlowState): ControlFlowState {
+        function or(s1: ControlFlowState, s2: ControlFlowState): ControlFlowState {
             if (s1 === ControlFlowState.Reachable || s2 === ControlFlowState.Reachable) {
                 return ControlFlowState.Reachable;
             }
@@ -58,7 +59,7 @@ module ts {
             return ControlFlowState.Unreachable;
         }
 
-        function union(s1: ControlFlowState, s2: ControlFlowState): ControlFlowState {
+        function and(s1: ControlFlowState, s2: ControlFlowState): ControlFlowState {
             if (s1 === ControlFlowState.Reachable && s2 === ControlFlowState.Reachable) {
                 return ControlFlowState.Reachable;
             }
@@ -89,48 +90,108 @@ module ts {
             }
         }
 
+        var loopState: ControlFlowState[] = [];
+
+        function checkWhileStatement(n: WhileStatement): void {
+            var size = loopState.length;
+            loopState.push(state);
+
+
+
+            loopState.pop();
+            Debug.assert(loopState.length === size);
+        }
+
+        function checkDoStatement(n: DoStatement): void {
+            verifyReachable(n);
+            check((<DoStatement>n).statement);
+        }
+
+        function checkForStatement(n: ForStatement): void {
+            verifyReachable(n);
+            check((<ForStatement>n).statement);
+        }
+
+        function checkForInStatement(n: ForInStatement): void {
+            verifyReachable(n);
+            check((<ForInStatement>n).statement);
+        }
+
+        function checkBlock(n: Block): void {
+            forEach(n.statements, check);
+        }
+
+        function checkIfStatement(n: IfStatement): void {
+            enterCondition((<IfStatement>n).expression);
+            var savedTrue = trueState;
+            var savedFalse = falseState;
+
+            setState(savedTrue);
+            check((<IfStatement>n).thenStatement);
+            savedTrue = state;
+
+            setState(savedFalse);
+            check((<IfStatement>n).elseStatement);
+
+            state = or(state, savedTrue);
+        }
+
+        function checkReturnOrThrow(n: Node): void {
+            verifyReachable(n);
+            setState(ControlFlowState.Unreachable);
+        }
+
+        function checkBreakOrContinueStatement(n: BreakOrContinueStatement): void {
+            verifyReachable(n);
+            setState(ControlFlowState.Unreachable);
+        }
+
+        function checkTryStatement(n: TryStatement): void {
+            verifyReachable(n);
+            check(n.tryBlock);
+            check(n.catchBlock);
+            check(n.finallyBlock);
+        }
+
+        function checkSwitchStatement(n: SwitchStatement): void {
+            verifyReachable(n);
+        }
+
+        function checkLabelledStatement(n: LabelledStatement): void {
+            verifyReachable(n);
+            check(n.statement);
+        }
+
+        function checkWithStatement(n: WithStatement): void {
+        }
+
         // current assumption: only statements affect CF
         function check(n: Node): void {
             if (!n) {
                 return;
             }
             switch (n.kind) {
+                case SyntaxKind.WhileStatement:
+                    checkWhileStatement(<WhileStatement>n);
+                    break;
                 case SyntaxKind.Block:
                 case SyntaxKind.TryBlock:
                 case SyntaxKind.CatchBlock:
                 case SyntaxKind.FinallyBlock:
                 case SyntaxKind.ModuleBlock:
                 case SyntaxKind.FunctionBlock:
-                    forEach((<Block>n).statements, check);
+                    checkBlock(<Block>n);
                     break;
                 case SyntaxKind.IfStatement:
-                    enterCondition((<IfStatement>n).expression);
-                    var savedTrue = trueState;
-                    var savedFalse = falseState;
-
-                    setState(savedTrue);
-                    check((<IfStatement>n).thenStatement);
-                    savedTrue = state;
-
-                    setState(savedFalse);
-                    check((<IfStatement>n).elseStatement);
-
-                    state = combine(state, savedTrue);
+                    checkIfStatement(<IfStatement>n);
                     break;
                 case SyntaxKind.ReturnStatement:
                 case SyntaxKind.ThrowStatement:
-                    verifyReachable(n);
-                    setState(ControlFlowState.Unreachable);
+                    checkReturnOrThrow(n);
                     break;
                 case SyntaxKind.BreakStatement:
-                    verifyReachable(n);
-                    setState(ControlFlowState.Unreachable);
-                    // TODO: check labels
-                    break;
                 case SyntaxKind.ContinueStatement:
-                    verifyReachable(n);
-                    setState(ControlFlowState.Unreachable);
-                    // TODO: check labels
+                    checkBreakOrContinueStatement(<BreakOrContinueStatement>n);
                     break;
                 case SyntaxKind.VariableStatement:
                 case SyntaxKind.EmptyStatement:
@@ -139,30 +200,25 @@ module ts {
                     verifyReachable(n);
                     break;
                 case SyntaxKind.DoStatement:
-                    verifyReachable(n);
-                    check((<DoStatement>n).statement);
+                    checkDoStatement(<DoStatement>n);
                     break;
                 case SyntaxKind.ForInStatement:
-                    verifyReachable(n);
-                    check((<ForInStatement>n).statement);
+                    checkForInStatement(<ForInStatement>n);
                     break;
                 case SyntaxKind.ForStatement:
-                    verifyReachable(n);
-                    check((<ForStatement>n).statement);
+                    checkForStatement(<ForStatement>n);
                     break;
                 case SyntaxKind.LabelledStatement:
-                    verifyReachable(n);
-                    check((<LabelledStatement>n).statement);
+                    checkLabelledStatement(<LabelledStatement>n);
                     break;
                 case SyntaxKind.SwitchStatement:
-                case SyntaxKind.TryStatement:
-                    verifyReachable(n);
-                    check((<TryStatement>n).tryBlock);
-                    check((<TryStatement>n).catchBlock);
-                    check((<TryStatement>n).finallyBlock);
+                    checkSwitchStatement(<SwitchStatement>n);
                     break;
-                case SyntaxKind.WhileStatement:
+                case SyntaxKind.TryStatement:
+                    checkTryStatement(<TryStatement>n);
+                    break;
                 case SyntaxKind.WithStatement:
+                    checkWithStatement(<WithStatement>n);
                     break;
             }
         }
