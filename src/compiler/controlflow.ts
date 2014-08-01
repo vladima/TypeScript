@@ -91,6 +91,7 @@ module ts {
         }
 
         var loopState: ControlFlowState[] = [];
+        var implicitBreaks: ControlFlowState[] = [];
 
         function checkWhileStatement(n: WhileStatement): void {
             var size = loopState.length;
@@ -143,7 +144,18 @@ module ts {
 
         function checkBreakOrContinueStatement(n: BreakOrContinueStatement): void {
             verifyReachable(n);
+            var currentState = state;
             setState(ControlFlowState.Unreachable);
+            if (n.label) {
+                // TODO
+            }
+            else {
+                if (n.kind === SyntaxKind.BreakStatement) {
+                    // simulate jump to a implicit label
+                    var implicitBreakState = implicitBreaks[implicitBreaks.length - 1];
+                    implicitBreaks[implicitBreaks.length - 1] = implicitBreakState === ControlFlowState.Uninitialized ? currentState : or(implicitBreakState, currentState);
+                }
+            }
         }
 
         function checkTryStatement(n: TryStatement): void {
@@ -155,6 +167,22 @@ module ts {
 
         function checkSwitchStatement(n: SwitchStatement): void {
             verifyReachable(n);
+            var startState = state;
+            var hasDefault = false;
+
+            implicitBreaks.push(ControlFlowState.Uninitialized);
+
+            forEach(n.clauses, (c: CaseOrDefaultClause) => {
+                hasDefault = hasDefault || c.kind === SyntaxKind.DefaultClause;
+                setState(startState);
+                forEach(c.statements, check);
+            });
+
+            // post switch state is unreachable if switch is exaustive (has a default case ) and does not have fallthrough from the last case
+            var finalState = hasDefault && state !== ControlFlowState.Reachable ? ControlFlowState.Unreachable : startState;
+
+            var mergedBreakState = implicitBreaks.pop();
+            setState(mergedBreakState === ControlFlowState.Uninitialized ? finalState : or(mergedBreakState, finalState));
         }
 
         function checkLabelledStatement(n: LabelledStatement): void {
@@ -163,11 +191,13 @@ module ts {
         }
 
         function checkWithStatement(n: WithStatement): void {
+            verifyReachable(n);
+            check(n.statement);
         }
 
         // current assumption: only statements affect CF
         function check(n: Node): void {
-            if (!n) {
+            if (!n || state === ControlFlowState.ReportedUnreachable) {
                 return;
             }
             switch (n.kind) {
@@ -228,6 +258,7 @@ module ts {
     }
 
     enum ControlFlowState {
+        Uninitialized       = 0,
         Reachable           = 1,
         Unreachable         = 2,
         ReportedUnreachable = Unreachable | 4,
