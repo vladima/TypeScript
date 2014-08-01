@@ -90,17 +90,22 @@ module ts {
             }
         }
 
-        var loopState: ControlFlowState[] = [];
         var implicitBreaks: ControlFlowState[] = [];
 
         function checkWhileStatement(n: WhileStatement): void {
-            var size = loopState.length;
-            loopState.push(state);
+            verifyReachable(n);
 
+            enterCondition(n.expression);
+            var savedTrue = trueState;
+            var savedFalse = falseState;
 
+            setState(savedTrue);
 
-            loopState.pop();
-            Debug.assert(loopState.length === size);
+            implicitBreaks.push(ControlFlowState.Uninitialized);
+            check(n.statement);
+            var mergedBreakState = implicitBreaks.pop();
+
+            setState(mergedBreakState === ControlFlowState.Uninitialized ? savedFalse : or(savedFalse, mergedBreakState));
         }
 
         function checkDoStatement(n: DoStatement): void {
@@ -261,7 +266,7 @@ module ts {
         Uninitialized       = 0,
         Reachable           = 1,
         Unreachable         = 2,
-        ReportedUnreachable = Unreachable | 4,
+        ReportedUnreachable = 3,
         Default             = Unreachable
     }
 }
