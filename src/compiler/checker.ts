@@ -3,7 +3,7 @@
 /// <reference path="scanner.ts"/>
 /// <reference path="parser.ts"/>
 /// <reference path="binder.ts"/>
-/// <reference path="flow.ts"/>
+/// <reference path="controlflow.ts"/>
 /// <reference path="emitter.ts"/>
 
 module ts {
