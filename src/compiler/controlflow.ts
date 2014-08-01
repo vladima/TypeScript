@@ -115,12 +115,22 @@ module ts {
 
         function checkForStatement(n: ForStatement): void {
             verifyReachable(n);
-            check((<ForStatement>n).statement);
+
+            var breakState = state;
+            if (!n.declarations && !n.initializer && !n.condition && !n.iterator) {
+                breakState = ControlFlowState.Unreachable;
+            }
+
+            implicitBreaks.push(ControlFlowState.Uninitialized);
+            check(n.statement);
+
+            var mergedBreakState = implicitBreaks.pop();
+            setState(mergedBreakState === ControlFlowState.Uninitialized ? breakState : or(breakState, mergedBreakState));
         }
 
         function checkForInStatement(n: ForInStatement): void {
             verifyReachable(n);
-            check((<ForInStatement>n).statement);
+            check(n.statement);
         }
 
         function checkBlock(n: Block): void {
