@@ -18,27 +18,27 @@ module ts {
     }
 
     function checkControlFlow(decl: FunctionDeclaration, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void): ControlFlowState {
-        var state = ControlFlowState.Reachable;
+        var currentState = ControlFlowState.Reachable;
         var trueState = ControlFlowState.Default;
         var falseState = ControlFlowState.Default;
         var isInSplit = false;
 
         function setState(newState: ControlFlowState) {
             trueState = falseState = ControlFlowState.Default;
-            state = newState;
+            currentState = newState;
             isInSplit = false;
         }
 
         function setSplitState(newTrue: ControlFlowState, newFalse: ControlFlowState) {
             trueState = newTrue;
             falseState = newFalse;
-            state = ControlFlowState.Default;
+            currentState = ControlFlowState.Default;
             isInSplit = true;
         }
 
         function split() {
             if (!isInSplit) {
-                setSplitState(state, state);
+                setSplitState(currentState, currentState);
             }
         }
 
@@ -70,27 +70,84 @@ module ts {
         }
 
         function verifyReachable(n: Node): void {
-            if (state === ControlFlowState.Unreachable) {
+            if (currentState === ControlFlowState.Unreachable) {
                 error(n, Diagnostics.Unreachable_code_detected);
-                state = ControlFlowState.ReportedUnreachable;
+                currentState = ControlFlowState.ReportedUnreachable;
             }
         }
 
         function enterCondition(n: Node) {
             if (n.kind === SyntaxKind.TrueKeyword) {
                 join();
-                setSplitState(state, ControlFlowState.Unreachable);
+                setSplitState(currentState, ControlFlowState.Unreachable);
             }
             else if (n.kind === SyntaxKind.FalseKeyword) {
                 join();
-                setSplitState(ControlFlowState.Unreachable, state);
+                setSplitState(ControlFlowState.Unreachable, currentState);
             }
             else {
                 split();
             }
         }
 
-        var implicitBreaks: ControlFlowState[] = [];
+        // label name -> index in 'labelStack'
+        var labels: Map<number> = {};
+        // CF state at all seen labels
+        var labelStack: ControlFlowState[] = [];
+        // indices of implicit labels in 'labelStack'
+        var implicitLabels: number[] = [];
+
+        function pushNamedLabel(name: Identifier): void {
+            Debug.assert(!hasProperty(labels, name.text));
+            var newLen = labelStack.push(ControlFlowState.Uninitialized);
+            labels[name.text] = newLen - 1;
+        }
+
+        function pushImplicitLabel(): number {
+            var newLen = labelStack.push(ControlFlowState.Uninitialized);
+            implicitLabels.push(newLen - 1);
+            return newLen - 1;
+        }
+
+        function setFinalStateAtLabel(mergedStates: ControlFlowState, outerState: ControlFlowState, name: Identifier): void {
+            if (mergedStates === ControlFlowState.Uninitialized) {
+                if (name) {
+                    error(name, Diagnostics.Unused_label);
+                }
+                setState(outerState);
+            }
+            else {
+                setState(or(mergedStates, outerState));
+            }
+        }
+
+        function popNamedLabel(name: Identifier, outerState: ControlFlowState): void {
+            Debug.assert(hasProperty(labels, name.text));
+            var index = labels[name.text];
+            Debug.assert(labelStack.length === index + 1);
+            var mergedStates = labelStack.pop();
+            setFinalStateAtLabel(mergedStates, outerState, name);
+        }
+
+        function popImplicitLabel(index: number, outerState: ControlFlowState): void {
+            Debug.assert(labelStack.length === index + 1);
+            var mergedStates = labelStack.pop();
+            setFinalStateAtLabel(mergedStates, outerState, /*name*/ undefined);
+        }
+
+        function breakToLabel(label: Identifier): void {
+            var stateIndex: number;
+            if (label) {
+                Debug.assert(hasProperty(labels, label.text));
+                stateIndex = labels[label.text];
+            }
+            else {
+                Debug.assert(implicitLabels.length > 0);
+                stateIndex = implicitLabels[implicitLabels.length - 1];
+            }
+            var stateAtLabel = labelStack[stateIndex];
+            labelStack[stateIndex] = stateAtLabel === ControlFlowState.Uninitialized ? currentState : or(currentState, stateAtLabel);
+        }
 
         function checkWhileStatement(n: WhileStatement): void {
             verifyReachable(n);
@@ -98,14 +155,11 @@ module ts {
             enterCondition(n.expression);
             var savedTrue = trueState;
             var savedFalse = falseState;
-
             setState(savedTrue);
 
-            implicitBreaks.push(ControlFlowState.Uninitialized);
+            var index = pushImplicitLabel();
             check(n.statement);
-            var mergedBreakState = implicitBreaks.pop();
-
-            setState(mergedBreakState === ControlFlowState.Uninitialized ? savedFalse : or(savedFalse, mergedBreakState));
+            popImplicitLabel(index, savedFalse);
         }
 
         function checkDoStatement(n: DoStatement): void {
@@ -116,16 +170,14 @@ module ts {
         function checkForStatement(n: ForStatement): void {
             verifyReachable(n);
 
-            var breakState = state;
+            var savedState = currentState;
             if (!n.declarations && !n.initializer && !n.condition && !n.iterator) {
-                breakState = ControlFlowState.Unreachable;
+                savedState = ControlFlowState.Unreachable;
             }
 
-            implicitBreaks.push(ControlFlowState.Uninitialized);
+            var index = pushImplicitLabel();
             check(n.statement);
-
-            var mergedBreakState = implicitBreaks.pop();
-            setState(mergedBreakState === ControlFlowState.Uninitialized ? breakState : or(breakState, mergedBreakState));
+            popImplicitLabel(index, savedState);
         }
 
         function checkForInStatement(n: ForInStatement): void {
@@ -144,12 +196,12 @@ module ts {
 
             setState(savedTrue);
             check((<IfStatement>n).thenStatement);
-            savedTrue = state;
+            savedTrue = currentState;
 
             setState(savedFalse);
             check((<IfStatement>n).elseStatement);
 
-            state = or(state, savedTrue);
+            currentState = or(currentState, savedTrue);
         }
 
         function checkReturnOrThrow(n: Node): void {
@@ -159,33 +211,34 @@ module ts {
 
         function checkBreakOrContinueStatement(n: BreakOrContinueStatement): void {
             verifyReachable(n);
-            var currentState = state;
+            var currentState = currentState;
             setState(ControlFlowState.Unreachable);
-            if (n.label) {
-                // TODO
-            }
-            else {
-                if (n.kind === SyntaxKind.BreakStatement) {
-                    // simulate jump to a implicit label
-                    var implicitBreakState = implicitBreaks[implicitBreaks.length - 1];
-                    implicitBreaks[implicitBreaks.length - 1] = implicitBreakState === ControlFlowState.Uninitialized ? currentState : or(implicitBreakState, currentState);
-                }
-            }
+            // continue does not affect subsequent CF so just ignore them 
+            if (n.kind === SyntaxKind.BreakStatement) {
+                breakToLabel(n.label);
+            } 
         }
 
         function checkTryStatement(n: TryStatement): void {
             verifyReachable(n);
+
+            // catch\finally blocks has the same reachability as try block
+            var startState = currentState;
             check(n.tryBlock);
+
+            setState(startState);
             check(n.catchBlock);
+
+            setState(startState);
             check(n.finallyBlock);
         }
 
         function checkSwitchStatement(n: SwitchStatement): void {
             verifyReachable(n);
-            var startState = state;
+            var startState = currentState;
             var hasDefault = false;
 
-            implicitBreaks.push(ControlFlowState.Uninitialized);
+            var index = pushImplicitLabel();
 
             forEach(n.clauses, (c: CaseOrDefaultClause) => {
                 hasDefault = hasDefault || c.kind === SyntaxKind.DefaultClause;
@@ -194,15 +247,16 @@ module ts {
             });
 
             // post switch state is unreachable if switch is exaustive (has a default case ) and does not have fallthrough from the last case
-            var finalState = hasDefault && state !== ControlFlowState.Reachable ? ControlFlowState.Unreachable : startState;
+            var afterSwitchState = hasDefault && currentState !== ControlFlowState.Reachable ? ControlFlowState.Unreachable : startState;
 
-            var mergedBreakState = implicitBreaks.pop();
-            setState(mergedBreakState === ControlFlowState.Uninitialized ? finalState : or(mergedBreakState, finalState));
+            popImplicitLabel(index, afterSwitchState);
         }
 
         function checkLabelledStatement(n: LabelledStatement): void {
             verifyReachable(n);
+            pushNamedLabel(n.label);
             check(n.statement);
+            popNamedLabel(n.label, currentState);
         }
 
         function checkWithStatement(n: WithStatement): void {
@@ -212,7 +266,7 @@ module ts {
 
         // current assumption: only statements affect CF
         function check(n: Node): void {
-            if (!n || state === ControlFlowState.ReportedUnreachable) {
+            if (!n || currentState === ControlFlowState.ReportedUnreachable) {
                 return;
             }
             switch (n.kind) {
@@ -269,7 +323,7 @@ module ts {
         }
 
         check(decl.body);
-        return state;
+        return currentState;
     }
 
     enum ControlFlowState {
