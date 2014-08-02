@@ -1268,5 +1268,9 @@
     "Not all code paths return a value.": {
         "category": "Error",
         "code": -9999999
+    },
+    "Unused label.": {
+        "category": "Error",
+        "code": -9999999
     }
 }
