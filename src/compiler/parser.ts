@@ -146,6 +146,7 @@ module ts {
     export function forEachChild<T>(node: Node, cbNode: (node: Node) => T, cbNodes?: (nodes: Node[]) => T): T {
         function child(node: Node): T {
             if (node) return cbNode(node);
+            return undefined;
         }
         function children(nodes: Node[]) {
             if (nodes) {
@@ -321,6 +322,8 @@ module ts {
             case SyntaxKind.ExportAssignment:
                 return child((<ExportAssignment>node).exportName);
         }
+
+        return undefined;
     }
 
     export function hasRestParameters(s: SignatureDeclaration): boolean {
@@ -380,6 +383,7 @@ module ts {
             case ParsingContext.TypeParameters:         return Diagnostics.Type_parameter_declaration_expected;
             case ParsingContext.TypeArguments:          return Diagnostics.Type_argument_expected;
         }
+        return undefined;
     };
 
     enum LookAheadMode {
@@ -840,7 +844,7 @@ module ts {
                     return isType();
             }
 
-            Debug.fail("Non-exhaustive case in 'isListElement'.");
+            throw Debug.fail("Non-exhaustive case in 'isListElement'.");
         }
 
         // True if positioned at a list terminator
@@ -880,6 +884,8 @@ module ts {
                     // Tokens other than '>' are here for better error recovery
                     return token === SyntaxKind.GreaterThanToken || token === SyntaxKind.OpenParenToken;
             }
+
+            return undefined;
         }
 
         function isVariableDeclaratorListTerminator(): boolean {
@@ -1121,6 +1127,8 @@ module ts {
                 }
                 return result;
             }
+
+            return undefined;
         }
 
         function parseParameterType(): TypeNode {
@@ -1355,6 +1363,8 @@ module ts {
                         return parsePropertyOrMethod();
                     }
             }
+
+            return undefined;
         }
 
         function parseTypeLiteral(): TypeLiteralNode {
@@ -2157,7 +2167,7 @@ module ts {
                     currentKind = SetAccesor;
                 }
                 else {
-                    Debug.fail("Unexpected syntax kind:" + SyntaxKind[p.kind]);
+                    throw Debug.fail("Unexpected syntax kind:" + SyntaxKind[p.kind]);
                 }
 
                 if (!hasProperty(seen, p.name.text)) {
@@ -2415,7 +2425,7 @@ module ts {
                 // Fall through
             }
             else {
-                Debug.fail("checkAnonymousBreakOrContinueStatement");
+                throw Debug.fail("checkAnonymousBreakOrContinueStatement");
             }
 
             Debug.assert(inIterationStatement === ControlBlockContext.CrossingFunctionBoundary
@@ -2447,7 +2457,7 @@ module ts {
                 grammarErrorOnNode(node, Diagnostics.A_break_statement_can_only_jump_to_a_label_of_an_enclosing_statement);
             }
             else {
-                Debug.fail("checkBreakOrContinueStatementWithLabel");
+               throw Debug.fail("checkBreakOrContinueStatementWithLabel");
             }
         }
 
@@ -2746,6 +2756,7 @@ module ts {
                 return undefined;
             }
             error(Diagnostics.Block_or_expected); // block or ';' expected
+            return undefined;
         }
 
         // DECLARATIONS
@@ -3136,7 +3147,7 @@ module ts {
             }
 
             // 'isClassMemberStart' should have hinted not to attempt parsing.
-            Debug.fail("Should not have attempted to parse class member declaration.");
+            throw Debug.fail("Should not have attempted to parse class member declaration.");
         }
 
         function parseClassDeclaration(pos: number, flags: NodeFlags): ClassDeclaration {

@@ -544,17 +544,17 @@ module ts {
 
         export function assert(expression: any, message?: string, verboseDebugInfo?: () => string): void {
             if (!expression) {
-                var verboseDebugString = "";
-                if (verboseDebugInfo) {
-                    verboseDebugString = "\r\nVerbose Debug Information: " + verboseDebugInfo();
-                }
-
-                throw new Error("Debug Failure. False expression: " + (message || "") + verboseDebugString);
+                throw fail(message, verboseDebugInfo);
             }
         }
 
-        export function fail(message?: string): void {
-            Debug.assert(false, message);
+        export function fail(message?: string, verboseDebugInfo?: () => string): Error {
+            var verboseDebugString = "";
+            if (verboseDebugInfo) {
+                verboseDebugString = "\r\nVerbose Debug Information: " + verboseDebugInfo();
+            }
+
+            return new Error("Debug Failure. False expression: " + (message || "") + verboseDebugString);
         }
     }
 }

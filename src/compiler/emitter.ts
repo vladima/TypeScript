@@ -1226,6 +1226,7 @@ module ts {
                         }
                     }
                 }
+                return undefined;
             }
 
             function emitParameterPropertyAssignments(node: ConstructorDeclaration) {
@@ -1498,6 +1499,7 @@ module ts {
                     var recursiveInnerModule = getInnerMostModuleDeclarationFromDottedModule(<ModuleDeclaration>moduleDeclaration.body);
                     return recursiveInnerModule || <ModuleDeclaration>moduleDeclaration.body;
                 }
+                return undefined;
             }
 
             function emitModuleDeclaration(node: ModuleDeclaration) {

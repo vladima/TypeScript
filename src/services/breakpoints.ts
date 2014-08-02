@@ -92,7 +92,6 @@ module TypeScript.Services.Breakpoints {
                             return null;
                         }
                         return this.breakpointSpanOfFirstStatementInBlock(container);
-                        break;
 
                     case TypeScript.SyntaxKind.ModuleDeclaration:
                     case TypeScript.SyntaxKind.ClassDeclaration:
@@ -186,7 +185,6 @@ module TypeScript.Services.Breakpoints {
                             return null;
                         }
                         return this.breakpointSpanOfLastStatementInBlock(container);
-                        break;
 
                     case TypeScript.SyntaxKind.ModuleDeclaration:
                         if (!this.canHaveBreakpointInDeclaration(container)) {

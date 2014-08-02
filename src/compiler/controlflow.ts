@@ -98,7 +98,7 @@ module ts {
         var implicitLabels: number[] = [];
 
         function pushNamedLabel(name: Identifier): void {
-            Debug.assert(!hasProperty(labels, name.text));
+            Debug.assert(!hasProperty(labels, name.text) || !labels[name.text]);
             var newLen = labelStack.push(ControlFlowState.Uninitialized);
             labels[name.text] = newLen - 1;
         }
@@ -125,17 +125,24 @@ module ts {
             Debug.assert(hasProperty(labels, name.text));
             var index = labels[name.text];
             Debug.assert(labelStack.length === index + 1);
+            labels[name.text] = undefined;
             var mergedStates = labelStack.pop();
             setFinalStateAtLabel(mergedStates, outerState, name);
         }
 
         function popImplicitLabel(index: number, outerState: ControlFlowState): void {
+            if (labelStack.length !== index + 1) {
+                var file = getSourceFileOfNode(decl);
+                throw new Error(file.filename);
+            }
             Debug.assert(labelStack.length === index + 1);
+            var i = implicitLabels.pop();
+            Debug.assert(index === i);
             var mergedStates = labelStack.pop();
             setFinalStateAtLabel(mergedStates, outerState, /*name*/ undefined);
         }
 
-        function breakToLabel(label: Identifier): void {
+        function gotoLabel(label: Identifier, outerState: ControlFlowState): void {
             var stateIndex: number;
             if (label) {
                 Debug.assert(hasProperty(labels, label.text));
@@ -146,7 +153,7 @@ module ts {
                 stateIndex = implicitLabels[implicitLabels.length - 1];
             }
             var stateAtLabel = labelStack[stateIndex];
-            labelStack[stateIndex] = stateAtLabel === ControlFlowState.Uninitialized ? currentState : or(currentState, stateAtLabel);
+            labelStack[stateIndex] = stateAtLabel === ControlFlowState.Uninitialized ? outerState : or(outerState, stateAtLabel);
         }
 
         function checkWhileStatement(n: WhileStatement): void {
@@ -164,7 +171,10 @@ module ts {
 
         function checkDoStatement(n: DoStatement): void {
             verifyReachable(n);
+            var savedState = currentState;
+            var index = pushImplicitLabel();
             check((<DoStatement>n).statement);
+            popImplicitLabel(index, savedState);
         }
 
         function checkForStatement(n: ForStatement): void {
@@ -182,7 +192,11 @@ module ts {
 
         function checkForInStatement(n: ForInStatement): void {
             verifyReachable(n);
+            var savedState = currentState;
+
+            var index = pushImplicitLabel();
             check(n.statement);
+            popImplicitLabel(index, savedState);
         }
 
         function checkBlock(n: Block): void {
@@ -190,16 +204,16 @@ module ts {
         }
 
         function checkIfStatement(n: IfStatement): void {
-            enterCondition((<IfStatement>n).expression);
+            enterCondition(n.expression);
             var savedTrue = trueState;
             var savedFalse = falseState;
 
             setState(savedTrue);
-            check((<IfStatement>n).thenStatement);
+            check(n.thenStatement);
             savedTrue = currentState;
 
             setState(savedFalse);
-            check((<IfStatement>n).elseStatement);
+            check(n.elseStatement);
 
             currentState = or(currentState, savedTrue);
         }
@@ -211,12 +225,13 @@ module ts {
 
         function checkBreakOrContinueStatement(n: BreakOrContinueStatement): void {
             verifyReachable(n);
-            var currentState = currentState;
-            setState(ControlFlowState.Unreachable);
-            // continue does not affect subsequent CF so just ignore them 
             if (n.kind === SyntaxKind.BreakStatement) {
-                breakToLabel(n.label);
-            } 
+                gotoLabel(n.label, currentState);
+            }
+            else {
+                gotoLabel(n.label, ControlFlowState.Unreachable); // TODO
+            }
+            setState(ControlFlowState.Unreachable);
         }
 
         function checkTryStatement(n: TryStatement): void {
@@ -225,12 +240,15 @@ module ts {
             // catch\finally blocks has the same reachability as try block
             var startState = currentState;
             check(n.tryBlock);
+            var postTryState = currentState;
 
             setState(startState);
             check(n.catchBlock);
+            var postCatchState = currentState;
 
             setState(startState);
             check(n.finallyBlock);
+            setState(or(postTryState, postCatchState));
         }
 
         function checkSwitchStatement(n: SwitchStatement): void {

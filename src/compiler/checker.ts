@@ -974,8 +974,7 @@ module ts {
                         return isExternalModule(<SourceFile>node) ? node : undefined;
                     }
                 }
-                Debug.fail("getContainingModule cant reach here");
-                return undefined;
+                throw Debug.fail("getContainingModule cant reach here");
             }
 
             function isUsedInExportAssignment(node: Node) {
@@ -1068,7 +1067,7 @@ module ts {
                         return true;
 
                     default:
-                        Debug.fail("isDeclarationVisible unknown: SyntaxKind: " + SyntaxKind[node.kind]);
+                        throw Debug.fail("isDeclarationVisible unknown: SyntaxKind: " + SyntaxKind[node.kind]);
                 }
             }
 
@@ -1200,7 +1199,7 @@ module ts {
                         break;
 
                     default:
-                        Debug.fail("Received a '" + SyntaxKind[declaration.kind] + "', but expected '" +
+                        throw Debug.fail("Received a '" + SyntaxKind[declaration.kind] + "', but expected '" +
                             SyntaxKind[SyntaxKind.VariableDeclaration] + "', '" +
                             SyntaxKind[SyntaxKind.Property] + "', or '" +
                             SyntaxKind[SyntaxKind.Parameter] + "'.\r\n");
@@ -3252,7 +3251,7 @@ module ts {
                             return false;
                     }
                 }
-                Debug.fail("should not get here");
+                throw Debug.fail("should not get here");
             }
 
             var symbol = resolveName(node, node.text, SymbolFlags.Value | SymbolFlags.ExportValue, Diagnostics.Cannot_find_name_0, identifierToString(node));
@@ -4096,6 +4095,7 @@ module ts {
                     case SyntaxKind.FinallyBlock:
                         return forEachChild(node, traverse);
                 }
+                return undefined;
             }
         }
 
@@ -6052,7 +6052,7 @@ module ts {
                 case SyntaxKind.TryStatement:
                     return checkTryStatement(<TryStatement>node);
                 case SyntaxKind.VariableDeclaration:
-                    return Debug.fail("Checker encountered variable declaration");
+                    throw Debug.fail("Checker encountered variable declaration");
                 case SyntaxKind.ClassDeclaration:
                     return checkClassDeclaration(<ClassDeclaration>node);
                 case SyntaxKind.InterfaceDeclaration:
@@ -6401,7 +6401,7 @@ module ts {
                 }
                 node = node.parent;
             }
-            Debug.fail("getLocalNameForSymbol failed");
+            throw Debug.fail("getLocalNameForSymbol failed");
         }
 
         function getExpressionNamePrefix(node: Identifier): string {
@@ -6420,6 +6420,7 @@ module ts {
                     return isExternalModuleSymbol(symbol.parent) ? "exports" : getLocalNameForSymbol(getParentOfSymbol(symbol), node.parent);
                 }
             }
+            return undefined;
         }
 
         function getPropertyAccessSubstitution(node: PropertyAccess): string {
@@ -6431,6 +6432,7 @@ module ts {
                     return constantValue.toString() + " /* " + identifierToString(declaration.name) + " */";
                 }
             }
+            return undefined;
         }
 
         function getExportAssignmentName(node: SourceFile): string {
