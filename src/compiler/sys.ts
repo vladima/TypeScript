@@ -205,7 +205,7 @@ var sys: System = (function () {
                     }
 
                     callback(fileName);
-                };
+                }
             },
             resolvePath: function (path: string): string {
                 return _path.resolve(path);

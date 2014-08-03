@@ -133,7 +133,7 @@ module Harness.LanguageService {
         getScriptVersion(fileName: string): number { return this.shimHost.getScriptVersion(fileName);}
         getScriptIsOpen(fileName: string): boolean { return this.shimHost.getScriptIsOpen(fileName); }
         getScriptByteOrderMark(fileName: string): ts.ByteOrderMark { return this.shimHost.getScriptByteOrderMark(fileName);}
-        getLocalizedDiagnosticMessages(): any { JSON.parse(this.shimHost.getLocalizedDiagnosticMessages());}
+        getLocalizedDiagnosticMessages(): any { return JSON.parse(this.shimHost.getLocalizedDiagnosticMessages());}
         getCancellationToken(): ts.CancellationToken { return this.shimHost.getCancellationToken(); }
     }
 
