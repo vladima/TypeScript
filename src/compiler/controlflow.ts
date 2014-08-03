@@ -135,10 +135,6 @@ module ts {
         }
 
         function popImplicitLabel(index: number, outerState: ControlFlowState): void {
-            if (labelStack.length !== index + 1) {
-                var file = getSourceFileOfNode(decl);
-                throw new Error(file.filename);
-            }
             Debug.assert(labelStack.length === index + 1);
             var i = implicitLabels.pop();
             Debug.assert(index === i);
@@ -164,43 +160,42 @@ module ts {
             verifyReachable(n);
 
             enterCondition(n.expression);
-            var savedTrue = trueState;
-            var savedFalse = falseState;
-            setState(savedTrue);
+            var enterWhileState = trueState;
+            var postWhileState = falseState;
+            setState(enterWhileState);
 
             var index = pushImplicitLabel();
             check(n.statement);
-            popImplicitLabel(index, savedFalse);
+            popImplicitLabel(index, postWhileState);
         }
 
         function checkDoStatement(n: DoStatement): void {
             verifyReachable(n);
-            var savedState = currentState;
+            var preDoState = currentState;
+
             var index = pushImplicitLabel();
-            check((<DoStatement>n).statement);
-            popImplicitLabel(index, savedState);
+            check(n.statement);
+
+            var postDoState = n.expression.kind === SyntaxKind.TrueKeyword ? ControlFlowState.Unreachable : preDoState;
+            popImplicitLabel(index, postDoState);
         }
 
         function checkForStatement(n: ForStatement): void {
             verifyReachable(n);
 
-            var savedState = currentState;
-            if (!n.declarations && !n.initializer && !n.condition && !n.iterator) {
-                savedState = ControlFlowState.Unreachable;
-            }
-
+            var preForState = currentState;
             var index = pushImplicitLabel();
             check(n.statement);
-            popImplicitLabel(index, savedState);
+            var postForState = n.declarations || n.initializer || n.condition || n.iterator ? preForState : ControlFlowState.Unreachable;
+            popImplicitLabel(index, postForState);
         }
 
         function checkForInStatement(n: ForInStatement): void {
             verifyReachable(n);
-            var savedState = currentState;
-
+            var preForInState = currentState;
             var index = pushImplicitLabel();
             check(n.statement);
-            popImplicitLabel(index, savedState);
+            popImplicitLabel(index, preForInState);
         }
 
         function checkBlock(n: Block): void {
@@ -294,6 +289,9 @@ module ts {
             switch (n.kind) {
                 case SyntaxKind.WhileStatement:
                     checkWhileStatement(<WhileStatement>n);
+                    break;
+                case SyntaxKind.SourceFile:
+                    checkBlock(<SourceFile>n);
                     break;
                 case SyntaxKind.Block:
                 case SyntaxKind.TryBlock:
