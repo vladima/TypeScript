@@ -4189,7 +4189,7 @@ module ts {
                     }
                 }
 
-                checkFlow(node, noImplicitReturns, error);
+                checkControlFlowOfFunction(node, noImplicitReturns, error);
 
                 checkSignatureDeclaration(node);
                 if (node.body.kind === SyntaxKind.FunctionBlock) {
@@ -5137,7 +5137,7 @@ module ts {
             //    checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNode(node.type));
             //}
 
-            checkFlow(node, noImplicitReturns, error);
+            checkControlFlowOfFunction(node, noImplicitReturns, error);
 
             // If there is no body and no explicit return type, then report an error.
             if (program.getCompilerOptions().noImplicitAny && !node.body && !node.type) {
@@ -5911,6 +5911,9 @@ module ts {
                 }
             }
             checkSourceElement(node.body);
+            if (node.body.kind === SyntaxKind.ModuleBlock) {
+                checkControlFlowOfBlock(<Block>node.body, error);
+            }
         }
 
         function getFirstIdentifier(node: EntityName): Identifier {
@@ -6074,6 +6077,9 @@ module ts {
                 emitExtends = false;
                 potentialThisCollisions.length = 0;
                 forEach(node.statements, checkSourceElement);
+
+                checkControlFlowOfBlock(node, error);
+
                 if (isExternalModule(node)) {
                     var symbol = getExportAssignmentSymbol(node.symbol);
                     if (symbol && symbol.flags & SymbolFlags.Import) {

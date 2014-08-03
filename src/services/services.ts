@@ -202,6 +202,7 @@ module ts {
                 if (child.kind < SyntaxKind.Missing) return child;
                 if (child.kind > SyntaxKind.Missing) return child.getFirstToken();
             }
+            return undefined;
         }
 
         public getLastToken(): Node {
@@ -211,6 +212,7 @@ module ts {
                 if (child.kind < SyntaxKind.Missing) return child;
                 if (child.kind > SyntaxKind.Missing) return child.getLastToken();
             }
+            return undefined;
         }
     }
 
@@ -1869,9 +1871,9 @@ module ts {
                         kind: getTypeKind(type),
                         minChar: node.pos,
                         limChar: node.end
-                    };
-                    break;
+                    };                    
             }
+            return undefined;
         }
 
         /// Syntactic features

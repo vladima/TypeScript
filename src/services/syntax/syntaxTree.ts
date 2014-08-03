@@ -443,6 +443,7 @@ module TypeScript {
                     return true;
                 }
             }
+            return false;
         }
 
         public visitClassDeclaration(node: ClassDeclarationSyntax): void {
@@ -809,9 +810,11 @@ module TypeScript {
                 this.pushDiagnostic(declareToken, DiagnosticCode.A_declare_modifier_cannot_be_used_with_an_import_declaration);
                 return true;
             }
+            
+            return false;
         }
 
-        public visitImportDeclaration(node: ImportDeclarationSyntax): any {
+        public visitImportDeclaration(node: ImportDeclarationSyntax): void {
             if (this.checkForDisallowedDeclareModifierOnImportDeclaration(node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers)) {
                 return;

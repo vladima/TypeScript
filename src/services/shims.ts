@@ -325,7 +325,6 @@ module ts {
             var settingsJson = this.shimHost.getCompilationSettings();
             if (settingsJson == null || settingsJson == "") {
                 throw Error("LanguageServiceShimHostAdapter.getCompilationSettings: empty compilationSettings");
-                return null;
             }
             var options = compilationSettingsToCompilerOptions(<CompilerOptions>JSON.parse(<any>settingsJson));
 

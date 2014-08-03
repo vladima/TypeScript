@@ -5,19 +5,23 @@
 /// <reference path="binder.ts"/>
 
 module ts {
-    export function checkFlow(decl: FunctionDeclaration, noImplicitReturns: boolean, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void) {
-        if (!decl.body) {
+    export function checkControlFlowOfFunction(decl: FunctionDeclaration, noImplicitReturns: boolean, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void) {
+        if (!decl.body || decl.body.kind !== SyntaxKind.FunctionBlock) {
             return;
         }
 
-        var finalState = checkControlFlow(decl, error);
+        var finalState = checkControlFlow(decl.body, error);
         if (noImplicitReturns && finalState === ControlFlowState.Reachable) {
             var errorNode: Node = decl.name || decl;
             error(errorNode, Diagnostics.Not_all_code_paths_return_a_value);
         }
     }
 
-    function checkControlFlow(decl: FunctionDeclaration, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void): ControlFlowState {
+    export function checkControlFlowOfBlock(block: Block, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void) {
+        checkControlFlow(block, error);
+    }
+
+    function checkControlFlow(decl: Node, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void): ControlFlowState {
         var currentState = ControlFlowState.Reachable;
         var trueState = ControlFlowState.Default;
         var falseState = ControlFlowState.Default;
@@ -265,9 +269,9 @@ module ts {
             });
 
             // post switch state is unreachable if switch is exaustive (has a default case ) and does not have fallthrough from the last case
-            var afterSwitchState = hasDefault && currentState !== ControlFlowState.Reachable ? ControlFlowState.Unreachable : startState;
+            var postSwitchState = hasDefault && currentState !== ControlFlowState.Reachable ? ControlFlowState.Unreachable : startState;
 
-            popImplicitLabel(index, afterSwitchState);
+            popImplicitLabel(index, postSwitchState);
         }
 
         function checkLabelledStatement(n: LabelledStatement): void {
@@ -340,7 +344,7 @@ module ts {
             }
         }
 
-        check(decl.body);
+        check(decl);
         return currentState;
     }
 
