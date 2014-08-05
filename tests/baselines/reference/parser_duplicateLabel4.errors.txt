@@ -1,4 +1,4 @@
-==== tests/cases/conformance/parser/ecmascript5/Statements/LabeledStatements/parser_duplicateLabel4.ts (3 errors) ====
+==== tests/cases/conformance/parser/ecmascript5/Statements/LabeledStatements/parser_duplicateLabel4.ts (2 errors) ====
     target:
     ~~~~~~
 !!! Unused label.
@@ -6,8 +6,6 @@
     }
     
     target: 
-    ~~~~~~
-!!! Unused label.
     ~~~~~~~~
     while (true) {
     ~~~~~~~~~~~~~~

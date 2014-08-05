@@ -1,4 +1,4 @@
-==== tests/cases/conformance/expressions/unaryOperators/typeofOperator/typeofOperatorWithStringType.ts (7 errors) ====
+==== tests/cases/conformance/expressions/unaryOperators/typeofOperator/typeofOperatorWithStringType.ts (3 errors) ====
     // typeof  operator on string type
     var STRING: string;
     var STRING1: string[] = ["", "abc"];
@@ -59,14 +59,6 @@
 !!! Unused label.
     var y = { a: "", b: "" };
     z: typeof y.a;
-    ~
-!!! Unused label.
     z: typeof objA.a;
-    ~
-!!! Unused label.
     z: typeof A.foo;
-    ~
-!!! Unused label.
     z: typeof M.n;
-    ~
-!!! Unused label.
