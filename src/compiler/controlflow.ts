@@ -145,11 +145,18 @@ module ts {
         function gotoLabel(label: Identifier, outerState: ControlFlowState): void {
             var stateIndex: number;
             if (label) {
-                Debug.assert(hasProperty(labels, label.text));
+                if (!hasProperty(labels, label.text)) {
+                    // reference to non-existing label
+                    return;
+                }
                 stateIndex = labels[label.text];
             }
             else {
-                Debug.assert(implicitLabels.length > 0);
+                if (implicitLabels.length === 0) {
+                    // non-labeled break\continue being used outside loops
+                    return;
+                }
+                
                 stateIndex = implicitLabels[implicitLabels.length - 1];
             }
             var stateAtLabel = labelStack[stateIndex];

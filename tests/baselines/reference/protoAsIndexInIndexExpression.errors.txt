@@ -1,0 +1,21 @@
+==== tests/cases/compiler/protoAsIndexInIndexExpression_1.ts (1 errors) ====
+    ///<reference path='protoAsIndexInIndexExpression_0.ts'/>
+    var EntityPrototype = undefined;
+    var WorkspacePrototype = {
+        serialize: function (): any {
+                   ~~~~~~~~~~~~~~~~~~
+        }
+    ~~~~~
+!!! Not all code paths return a value.
+    };
+    WorkspacePrototype['__proto__'] = EntityPrototype;
+    
+    var o = {
+        "__proto__": 0
+    };
+    class C {
+        "__proto__" = 0;
+    }
+==== tests/cases/compiler/protoAsIndexInIndexExpression_0.ts (0 errors) ====
+    export var x;
+    

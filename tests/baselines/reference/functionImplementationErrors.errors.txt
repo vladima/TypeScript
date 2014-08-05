@@ -1,4 +1,4 @@
-==== tests/cases/conformance/functions/functionImplementationErrors.ts (12 errors) ====
+==== tests/cases/conformance/functions/functionImplementationErrors.ts (8 errors) ====
     // FunctionExpression with no return type annotation with multiple return statements with unrelated types
     var f1 = function () {
              ~~~~~~~~~~~~~
@@ -6,8 +6,6 @@
     ~~~~~~~~~~~~~~
         return 3;
     ~~~~~~~~~~~~~
-        ~~~~~~~~~
-!!! Unreachable code detected.
     };
     ~
 !!! No best common type exists among return expressions.
@@ -17,8 +15,6 @@
     ~~~~~~~~~~~~~~
         return 3;
     ~~~~~~~~~~~~~
-        ~~~~~~~~~
-!!! Unreachable code detected.
     };
     ~
 !!! No best common type exists among return expressions.
@@ -28,8 +24,6 @@
     ~~~~~~~~~~~~~~
         return 3;
     ~~~~~~~~~~~~~
-        ~~~~~~~~~
-!!! Unreachable code detected.
     };
     ~
 !!! No best common type exists among return expressions.
@@ -45,8 +39,6 @@
     ~~~~~~~~~~~~
             return [1];
     ~~~~~~~~~~~~~~~~~~~
-            ~~~~~~~~~~~
-!!! Unreachable code detected.
         }
     ~~~~~
     }

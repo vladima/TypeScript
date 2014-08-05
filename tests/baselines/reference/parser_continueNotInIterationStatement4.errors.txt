@@ -1,0 +1,12 @@
+==== tests/cases/conformance/parser/ecmascript5/Statements/ContinueStatements/parser_continueNotInIterationStatement4.ts (2 errors) ====
+    TWO:
+    ~~~
+!!! Unused label.
+    while (true){
+      var x = () => {
+        continue TWO;
+        ~~~~~~~~~~~~~
+!!! Jump target cannot cross function boundary.
+      }
+    }
+    

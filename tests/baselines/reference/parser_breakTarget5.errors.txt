@@ -1,0 +1,13 @@
+==== tests/cases/conformance/parser/ecmascript5/Statements/BreakStatements/parser_breakTarget5.ts (2 errors) ====
+    target:
+    ~~~~~~
+!!! Unused label.
+    while (true) {
+      function f() {
+        while (true) {
+          break target;
+          ~~~~~~~~~~~~~
+!!! Jump target cannot cross function boundary.
+        }
+      }
+    }

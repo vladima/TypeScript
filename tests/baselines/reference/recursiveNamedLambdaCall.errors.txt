@@ -1,4 +1,4 @@
-==== tests/cases/compiler/recursiveNamedLambdaCall.ts (6 errors) ====
+==== tests/cases/compiler/recursiveNamedLambdaCall.ts (5 errors) ====
     var promise = function( obj ) {
     	
     		if ( top && top.doScroll ) {
@@ -10,20 +10,14 @@
     				if ( false ) {
     
     					try {
-    					~~~~~
     						top.doScroll("left");
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
     						~~~
 !!! Cannot find name 'top'.
     					} catch(e) {
-    ~~~~~~~~~~~~~~~~~
     						return setTimeout( doScrollCheck, 50 );
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     						       ~~~~~~~~~~
 !!! Cannot find name 'setTimeout'.
     					}
-    ~~~~~~
-!!! Unreachable code detected.
     
     					// detach all dom ready events
     					detach();
