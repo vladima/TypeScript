@@ -1,4 +1,4 @@
-==== tests/cases/conformance/externalModules/initializersInDeclarations.ts (7 errors) ====
+==== tests/cases/conformance/externalModules/initializersInDeclarations.ts (8 errors) ====
     
     // Errors: Initializers & statements in declaration file
     
@@ -31,4 +31,6 @@
     	export var v1 = () => false;
     	              ~
 !!! Initializers are not allowed in ambient contexts.
+    	~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!!! Unreachable code detected.
     }

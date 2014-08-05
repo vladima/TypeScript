@@ -1,4 +1,4 @@
-==== tests/cases/compiler/arrayAssignmentTest5.ts (1 errors) ====
+==== tests/cases/compiler/arrayAssignmentTest5.ts (2 errors) ====
     module Test {
         interface IState {
         }
@@ -20,6 +20,8 @@
         }
         export class Bug implements IMode {
             public onEnter(line:string, state:IState, offset:number):IAction {
+                   ~~~~~~~
+!!! Not all code paths return a value.
                 var lineTokens:ILineTokens= this.tokenize(line, state, true);
                 var tokens:IStateToken[]= lineTokens.tokens;
                     ~~~~~~

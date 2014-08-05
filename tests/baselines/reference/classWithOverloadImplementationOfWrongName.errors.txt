@@ -1,8 +1,10 @@
-==== tests/cases/compiler/classWithOverloadImplementationOfWrongName.ts (1 errors) ====
+==== tests/cases/compiler/classWithOverloadImplementationOfWrongName.ts (2 errors) ====
     class C {
         foo(): string;
         foo(x): number;
         bar(x): any { }
+        ~~~
+!!! Not all code paths return a value.
         ~~~
 !!! Function implementation name must be 'foo'.
     }

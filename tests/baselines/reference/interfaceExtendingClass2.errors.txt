@@ -1,4 +1,4 @@
-==== tests/cases/conformance/interfaces/interfacesExtendingClasses/interfaceExtendingClass2.ts (6 errors) ====
+==== tests/cases/conformance/interfaces/interfacesExtendingClasses/interfaceExtendingClass2.ts (7 errors) ====
     class Foo {
         x: string;
         y() { }
@@ -24,6 +24,8 @@
             };
             ~
 !!! Declaration or statement expected.
+             ~
+!!! Unreachable code detected.
         }
         ~
 !!! Declaration or statement expected.

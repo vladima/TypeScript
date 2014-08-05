@@ -1,4 +1,4 @@
-==== tests/cases/compiler/implicitAnyWidenToAny.ts (4 errors) ====
+==== tests/cases/compiler/implicitAnyWidenToAny.ts (5 errors) ====
     // these should be errors
     var x = null;                        // error at "x"
         ~
@@ -31,6 +31,8 @@
     
     var objLit: { new (n: number): any; };
     function anyReturnFunc(): any { }
+             ~~~~~~~~~~~~~
+!!! Not all code paths return a value.
     var obj0 = new objLit(1);
     var obj1 = anyReturnFunc();
     

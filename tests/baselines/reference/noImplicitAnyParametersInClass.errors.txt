@@ -1,4 +1,4 @@
-==== tests/cases/compiler/noImplicitAnyParametersInClass.ts (44 errors) ====
+==== tests/cases/compiler/noImplicitAnyParametersInClass.ts (46 errors) ====
     
     class C {
         // No implicit-'any' errors.
@@ -48,6 +48,8 @@
                                   ~~
 !!! Parameter 'y2' implicitly has an 'any' type.
         public pub_f8(x3, y3): any { }
+               ~~~~~~
+!!! Not all code paths return a value.
                       ~~
 !!! Parameter 'x3' implicitly has an 'any' type.
                           ~~
@@ -138,6 +140,8 @@
                                     ~~
 !!! Parameter 'y2' implicitly has an 'any' type.
         private priv_f8(x3, y3): any { }
+                ~~~~~~~
+!!! Not all code paths return a value.
                         ~~
 !!! Parameter 'x3' implicitly has an 'any' type.
                             ~~

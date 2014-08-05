@@ -1,0 +1,9 @@
+==== tests/cases/compiler/returnStatement1.ts (1 errors) ====
+    function f() {
+        return function (s) {
+            var x = s;
+        };
+        ("harmless extra line");
+        ~~~~~~~~~~~~~~~~~~~~~~~~
+!!! Unreachable code detected.
+    }

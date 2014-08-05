@@ -1,0 +1,21 @@
+==== tests/cases/compiler/functionReturn.ts (3 errors) ====
+    function f0(): void { }
+    function f1() {
+        var n: any = f0();
+    }
+    function f2(): any { }
+             ~~
+!!! Not all code paths return a value.
+    function f3(): string { return; }
+    function f4(): string {
+        return '';
+        return;
+        ~~~~~~~
+!!! Unreachable code detected.
+    }
+    function f5(): string {
+        return '';
+        return undefined;
+        ~~~~~~~~~~~~~~~~~
+!!! Unreachable code detected.
+    }

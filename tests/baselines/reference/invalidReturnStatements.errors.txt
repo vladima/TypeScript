@@ -1,18 +1,20 @@
-==== tests/cases/conformance/statements/returnStatements/invalidReturnStatements.ts (6 errors) ====
+==== tests/cases/conformance/statements/returnStatements/invalidReturnStatements.ts (7 errors) ====
     // all the following should be error
     function fn1(): number {  }
-                    ~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~~
+!!! Not all code paths return a value.
     function fn2(): string { }
-                    ~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~~
+!!! Not all code paths return a value.
     function fn3(): boolean { }
-                    ~~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~~
+!!! Not all code paths return a value.
     function fn4(): Date {  }
-                    ~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~~
+!!! Not all code paths return a value.
     function fn7(): any {  } // should be valid: any includes void
+             ~~~
+!!! Not all code paths return a value.
     
     interface I { id: number }
     class C implements I {

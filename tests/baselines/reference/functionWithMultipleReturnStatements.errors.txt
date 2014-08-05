@@ -1,4 +1,4 @@
-==== tests/cases/conformance/types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements.ts (9 errors) ====
+==== tests/cases/conformance/types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements.ts (15 errors) ====
     // return type of a function with multiple returns is the BCT of each return statement
     // it is an error if there is no single BCT, these are error cases
     
@@ -12,6 +12,8 @@
     ~~~~~~~~~~~~
             return '';
     ~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~
+!!! Unreachable code detected.
         }
     ~~~~~
     }
@@ -28,10 +30,14 @@
     ~~~~~~~~~~~~~~~~~~~~~~~
             return 2;
     ~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~
+!!! Unreachable code detected.
         } else {
     ~~~~~~~~~~~~
             return '';
     ~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~
+!!! Unreachable code detected.
         }
     ~~~~~
     }
@@ -86,6 +92,8 @@
     ~~~~~~~~~~~~~
         return '';
     ~~~~~~~~~~~~~~
+        ~~~~~~~~~~
+!!! Unreachable code detected.
     }
     ~
 !!! No best common type exists among return expressions.
@@ -100,6 +108,8 @@
     ~~~~~~~~~~~~
             return y;
     ~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~
+!!! Unreachable code detected.
         }
     ~~~~~
     }
@@ -120,6 +130,8 @@
     ~~~~~~~~~~~~
             return y;
     ~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~
+!!! Unreachable code detected.
         }
     ~~~~~
     }

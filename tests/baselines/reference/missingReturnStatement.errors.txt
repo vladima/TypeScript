@@ -2,8 +2,8 @@
     module Test {
         export class Bug {
             public foo():string {
-                         ~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+                   ~~~
+!!! Not all code paths return a value.
             }
         }    
     }

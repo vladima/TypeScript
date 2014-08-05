@@ -1,4 +1,4 @@
-==== tests/cases/compiler/noImplicitAnyParametersInBareFunctions.ts (22 errors) ====
+==== tests/cases/compiler/noImplicitAnyParametersInBareFunctions.ts (23 errors) ====
     
     // No implicit-'any' errors.
     function f1(): void { }
@@ -47,6 +47,8 @@
                             ~~
 !!! Parameter 'y2' implicitly has an 'any' type.
     function f8(x3, y3): any { } 
+             ~~
+!!! Not all code paths return a value.
                 ~~
 !!! Parameter 'x3' implicitly has an 'any' type.
                     ~~

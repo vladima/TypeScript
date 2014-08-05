@@ -1,0 +1,10 @@
+==== tests/cases/compiler/commentOnClassMethod1.ts (1 errors) ====
+    class WebControls {
+        /**
+         * Render a control
+         */
+        createControl(): any {
+        ~~~~~~~~~~~~~
+!!! Not all code paths return a value.
+        }
+    }

@@ -1,4 +1,4 @@
-==== tests/cases/compiler/ifElseWithStatements1.ts (2 errors) ====
+==== tests/cases/compiler/ifElseWithStatements1.ts (4 errors) ====
     if (true)
         f();
         ~
@@ -7,11 +7,15 @@
         f();
         ~
 !!! Cannot find name 'f'.
+        ~~~~
+!!! Unreachable code detected.
     
     function foo(): boolean {
         if (true)
             return true;
         else
             return false;
+            ~~~~~~~~~~~~~
+!!! Unreachable code detected.
     }
     

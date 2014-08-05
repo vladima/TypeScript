@@ -1,4 +1,4 @@
-==== tests/cases/conformance/statements/for-inStatements/for-inStatements.ts (1 errors) ====
+==== tests/cases/conformance/statements/for-inStatements/for-inStatements.ts (2 errors) ====
     var aString: string;
     for (aString in {}) { }
     
@@ -10,6 +10,8 @@
     for (var x in [1, 2, 3, 4, 5]) { }
     
     function fn(): any { }
+             ~~
+!!! Not all code paths return a value.
     for (var x in fn()) { }
     
     for (var x in /[a-z]/) { }

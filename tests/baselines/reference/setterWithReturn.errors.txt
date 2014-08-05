@@ -1,4 +1,4 @@
-==== tests/cases/compiler/setterWithReturn.ts (3 errors) ====
+==== tests/cases/compiler/setterWithReturn.ts (4 errors) ====
     class C234 {
         public set p1(arg1) {
                    ~~
@@ -10,6 +10,8 @@
             }
             else {
                 return 0;
+                ~~~~~~~~~
+!!! Unreachable code detected.
                        ~
 !!! Setters cannot return a value.
             }

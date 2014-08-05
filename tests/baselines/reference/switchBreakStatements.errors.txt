@@ -1,0 +1,69 @@
+==== tests/cases/conformance/statements/breakStatements/switchBreakStatements.ts (4 errors) ====
+    switch ('') {
+        case 'a':
+            break;
+    }
+    
+    ONE:
+    switch ('') {
+        case 'a':
+            break ONE;
+    }
+    
+    TWO:
+    ~~~
+!!! Unused label.
+    THREE:
+    switch ('') {
+        case 'a':
+            break THREE;
+    }
+    
+    FOUR:
+    switch ('') {
+        case 'a':
+            FIVE:
+            ~~~~
+!!! Unused label.
+            switch ('') {
+                case 'a':
+                    break FOUR;
+            }
+    }
+    
+    switch ('') {
+        case 'a':
+            SIX:
+            switch ('') {
+                case 'a':
+                    break SIX;
+            }
+    }
+    
+    SEVEN:
+    switch ('') {
+        case 'a':
+            switch ('') {
+                case 'a':
+                    switch ('') {
+                        case 'a':
+                            break SEVEN;
+                            EIGHT:
+                            ~~~~~
+!!! Unused label.
+                            ~~~~~~
+                            switch ('') {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                case 'a':
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                    var fn = function () { }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                    break EIGHT;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+!!! Unreachable code detected.
+                    }
+            }
+    }
+    

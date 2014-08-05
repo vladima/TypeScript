@@ -1,0 +1,16 @@
+==== tests/cases/conformance/parser/ecmascript5/Statements/LabeledStatements/parser_duplicateLabel4.ts (3 errors) ====
+    target:
+    ~~~~~~
+!!! Unused label.
+    while (true) {
+    }
+    
+    target: 
+    ~~~~~~
+!!! Unused label.
+    ~~~~~~~~
+    while (true) {
+    ~~~~~~~~~~~~~~
+    }
+    ~
+!!! Unreachable code detected.

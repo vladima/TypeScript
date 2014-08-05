@@ -1,0 +1,8 @@
+==== tests/cases/conformance/parser/ecmascript5/Statements/BreakStatements/parser_breakTarget3.ts (1 errors) ====
+    target1:
+    target2:
+    ~~~~~~~
+!!! Unused label.
+    while (true) {
+      break target1;
+    }

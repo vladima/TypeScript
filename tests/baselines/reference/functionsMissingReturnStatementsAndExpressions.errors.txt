@@ -1,8 +1,8 @@
-==== tests/cases/compiler/functionsMissingReturnStatementsAndExpressions.ts (5 errors) ====
+==== tests/cases/compiler/functionsMissingReturnStatementsAndExpressions.ts (8 errors) ====
     
     function f1(): string {
-                   ~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~
+!!! Not all code paths return a value.
         // errors because there are no return statements
     }
     
@@ -65,19 +65,23 @@
     }
     
     function f14(): number {
-                    ~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
         // Not fine, since we can *only* consist of a single throw statement
         // if no return statements are present but we are annotated.
         throw undefined;
         throw null;
+        ~~~~~~~~~~~
+!!! Unreachable code detected.
     }
     
     function f15(): number {
         // Fine, since we have a return statement somewhere.
         throw undefined;
         throw null;
+        ~~~~~~~~~~~
+!!! Unreachable code detected.
         return;
+        ~~~~~~~
+!!! Unreachable code detected.
     }
     
     
@@ -123,6 +127,8 @@
             // if no return statements are present but we are a get accessor.
             throw null;
             throw undefined.
+            ~~~~~~~~~~~~~~~~
+!!! Unreachable code detected.
         }
         ~
 !!! Identifier expected.

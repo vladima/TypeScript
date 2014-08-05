@@ -17,11 +17,11 @@
     function f1(d: typeof f1) { }
     
     function f2(): typeof g2 { } 
-                   ~~~~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~
+!!! Not all code paths return a value.
     function g2(): typeof f2 { } 
-                   ~~~~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~
+!!! Not all code paths return a value.
     
     interface I<T> { }
     function f3(): I<typeof f3> { return f3; }

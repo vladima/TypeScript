@@ -1,4 +1,4 @@
-==== tests/cases/conformance/parser/ecmascript5/ErrorRecovery/ModuleElements/parserErrorRecovery_ModuleElement1.ts (4 errors) ====
+==== tests/cases/conformance/parser/ecmascript5/ErrorRecovery/ModuleElements/parserErrorRecovery_ModuleElement1.ts (5 errors) ====
     return foo;
     ~~~~~~
 !!! A 'return' statement can only be used within a function body.
@@ -8,6 +8,8 @@
     return bar;
     ~~~~~~
 !!! A 'return' statement can only be used within a function body.
+    ~~~~~~~~~~~
+!!! Unreachable code detected.
     }
     ~
 !!! Declaration or statement expected.

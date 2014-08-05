@@ -1,4 +1,4 @@
-==== tests/cases/compiler/duplicateLocalVariable1.ts (1 errors) ====
+==== tests/cases/compiler/duplicateLocalVariable1.ts (3 errors) ====
     
     //import FileManager = require('filemanager');
     //import App = require('app');
@@ -63,7 +63,11 @@
         // First 3 are for simple harness validation
         testRunner.addTest(new TestCase("Basic test", function () { return true; }));
         testRunner.addTest(new TestCase("Test for any error", function () { throw new Error(); return false; }, ""));
+                                                                                               ~~~~~~~~~~~~~
+!!! Unreachable code detected.
         testRunner.addTest(new TestCase("Test RegEx error message match", function () { throw new Error("Should also pass"); return false; }, "Should [also]+ pass"));
+                                                                                                                             ~~~~~~~~~~~~~
+!!! Unreachable code detected.
         testRunner.addTest(new TestCase("Test array compare true", function () { return TestRunner.arrayCompare([1, 2, 3], [1, 2, 3]); }));
         testRunner.addTest(new TestCase("Test array compare false", function () { return !TestRunner.arrayCompare([3, 2, 3], [1, 2, 3]); }));
     

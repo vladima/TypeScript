@@ -1,4 +1,4 @@
-==== tests/cases/compiler/overloadOnConstAsTypeAnnotation.ts (3 errors) ====
+==== tests/cases/compiler/overloadOnConstAsTypeAnnotation.ts (4 errors) ====
     var f: (x: 'hi') => number = ('hi') => { return 1; };
                                         ~~
 !!! ';' expected.
@@ -6,3 +6,5 @@
 !!! A 'return' statement can only be used within a function body.
            ~~~~~~~~~~~~~~~~~~~
 !!! Specialized overload signature is not assignable to any non-specialized signature.
+                                                        ~
+!!! Unreachable code detected.

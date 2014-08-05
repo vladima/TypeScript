@@ -1,4 +1,4 @@
-==== tests/cases/conformance/types/namedTypes/interfaceWithPrivateMember.ts (5 errors) ====
+==== tests/cases/conformance/types/namedTypes/interfaceWithPrivateMember.ts (6 errors) ====
     // interfaces do not permit private members, these are errors
     
     interface I {
@@ -17,6 +17,8 @@
         private y: string;
         ~~~~~~~
 !!! Property or signature expected.
+                ~
+!!! Unused label.
                    ~~~~~~
 !!! Cannot find name 'string'.
     }

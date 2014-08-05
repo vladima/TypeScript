@@ -32,15 +32,15 @@
     }
     
     function foo<T, U extends T>(x: T, y: U): V { // error
+             ~~~
+!!! Not all code paths return a value.
                     ~~~~~~~~~~~
 !!! Constraint of a type parameter cannot reference any type parameter from the same type parameter list.
                                               ~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
-                                              ~
 !!! Cannot find name 'V'.
         function bar<V extends T, W extends U>(): X { // error
-                                                  ~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+                 ~~~
+!!! Not all code paths return a value.
                                                   ~
 !!! Cannot find name 'X'.
             function baz<X extends W, Y extends V>(a: X, b: Y): T {
@@ -55,15 +55,15 @@
     }
     
     function foo2<U extends T, T>(x: T, y: U): W { // error
+             ~~~~
+!!! Not all code paths return a value.
                   ~~~~~~~~~~~
 !!! Constraint of a type parameter cannot reference any type parameter from the same type parameter list.
                                                ~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
-                                               ~
 !!! Cannot find name 'W'.
         function bar<V extends T, W extends U>(): Y { // error
-                                                  ~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+                 ~~~
+!!! Not all code paths return a value.
                                                   ~
 !!! Cannot find name 'Y'.
             function baz<X extends W, Y extends V>(a: X, b: Y): T {

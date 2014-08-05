@@ -1,4 +1,4 @@
-==== tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserCommaInTypeMemberList2.ts (8 errors) ====
+==== tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserCommaInTypeMemberList2.ts (9 errors) ====
     var s = $.extend< { workItem: any }, { workItem: any, width: string }>({ workItem: this._workItem }, {});
                                          ~
 !!! Variable declaration expected.
@@ -10,6 +10,8 @@
 !!! Cannot find name '$'.
                                   ~~~
 !!! Cannot find name 'any'.
+                                           ~~~~~~~~
+!!! Unused label.
                                                      ~~~
 !!! Cannot find name 'any'.
                                                           ~~~~~

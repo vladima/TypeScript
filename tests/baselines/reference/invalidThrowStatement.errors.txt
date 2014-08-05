@@ -1,4 +1,4 @@
-==== tests/cases/conformance/statements/throwStatements/invalidThrowStatement.ts (2 errors) ====
+==== tests/cases/conformance/statements/throwStatements/invalidThrowStatement.ts (3 errors) ====
     throw; 
          ~
 !!! Expression expected.
@@ -6,4 +6,6 @@
     export throw null;
     ~~~~~~
 !!! Declaration or statement expected.
+           ~~~~~~~~~~~
+!!! Unreachable code detected.
     

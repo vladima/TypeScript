@@ -1,4 +1,4 @@
-==== tests/cases/conformance/expressions/assignmentOperator/compoundAssignmentLHSIsValue.ts (80 errors) ====
+==== tests/cases/conformance/expressions/assignmentOperator/compoundAssignmentLHSIsValue.ts (82 errors) ====
     // expected error for all the LHS of compound assignments (arithmetic and addition)
     var value;
     
@@ -119,9 +119,13 @@
     { a: 0} *= value;
             ~~
 !!! Declaration or statement expected.
+      ~
+!!! Unused label.
     { a: 0} += value;
             ~~
 !!! Declaration or statement expected.
+      ~
+!!! Unused label.
     
     // array literals
     ['', ''] *= value;

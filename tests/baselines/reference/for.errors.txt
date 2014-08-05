@@ -1,4 +1,4 @@
-==== tests/cases/compiler/for.ts (1 errors) ====
+==== tests/cases/compiler/for.ts (2 errors) ====
     for (var i = 0; i < 10; i++) { // ok
         var x1 = i;
     }
@@ -30,4 +30,7 @@
     for () { // error
          ~
 !!! Expression expected.
+    ~~~~~~~~~~~~~~~~~
     }
+    ~
+!!! Unreachable code detected.

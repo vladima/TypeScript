@@ -1,0 +1,7 @@
+==== tests/cases/compiler/functionWithAnyReturnTypeAndNoReturnExpression.ts (1 errors) ====
+    // All should be allowed
+    function f(): any { }
+             ~
+!!! Not all code paths return a value.
+    var f2: () => any = () => { };
+    var f3 = (): any => { };

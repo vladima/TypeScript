@@ -1,4 +1,4 @@
-==== tests/cases/conformance/functions/functionImplementationErrors.ts (7 errors) ====
+==== tests/cases/conformance/functions/functionImplementationErrors.ts (12 errors) ====
     // FunctionExpression with no return type annotation with multiple return statements with unrelated types
     var f1 = function () {
              ~~~~~~~~~~~~~
@@ -6,6 +6,8 @@
     ~~~~~~~~~~~~~~
         return 3;
     ~~~~~~~~~~~~~
+        ~~~~~~~~~
+!!! Unreachable code detected.
     };
     ~
 !!! No best common type exists among return expressions.
@@ -15,6 +17,8 @@
     ~~~~~~~~~~~~~~
         return 3;
     ~~~~~~~~~~~~~
+        ~~~~~~~~~
+!!! Unreachable code detected.
     };
     ~
 !!! No best common type exists among return expressions.
@@ -24,6 +28,8 @@
     ~~~~~~~~~~~~~~
         return 3;
     ~~~~~~~~~~~~~
+        ~~~~~~~~~
+!!! Unreachable code detected.
     };
     ~
 !!! No best common type exists among return expressions.
@@ -39,6 +45,8 @@
     ~~~~~~~~~~~~
             return [1];
     ~~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~~
+!!! Unreachable code detected.
         }
     ~~~~~
     }
@@ -47,8 +55,8 @@
     
     // Function implemetnation with non -void return type annotation with no return
     function f5(): number {
-                   ~~~~~~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
+             ~~
+!!! Not all code paths return a value.
     }
     
     var m;
@@ -70,5 +78,7 @@
     undefined === function (): number {
         throw undefined;
         var x = 4;
+        ~~~~~~~~~~
+!!! Unreachable code detected.
     };
     

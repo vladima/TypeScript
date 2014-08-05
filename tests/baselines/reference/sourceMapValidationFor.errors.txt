@@ -1,4 +1,4 @@
-==== tests/cases/compiler/sourceMapValidationFor.ts (2 errors) ====
+==== tests/cases/compiler/sourceMapValidationFor.ts (4 errors) ====
     for (var i = 0; i < 10; i++) {
         WScript.Echo("i: " + i);
         ~~~~~~~
@@ -31,8 +31,16 @@
         i++;
     }
     for (;;)
+    ~~~~~~~~
     {
+    ~
         i++;
+    ~~~~~~~~
     }
+    ~
+!!! Unreachable code detected.
     for (i = 0, j = 20; j < 20, i < 20; j++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     }
+    ~
+!!! Unreachable code detected.

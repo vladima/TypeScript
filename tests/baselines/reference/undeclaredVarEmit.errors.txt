@@ -1,4 +1,6 @@
-==== tests/cases/compiler/undeclaredVarEmit.ts (1 errors) ====
+==== tests/cases/compiler/undeclaredVarEmit.ts (2 errors) ====
     f: number;
+    ~
+!!! Unused label.
        ~~~~~~
 !!! Cannot find name 'number'.

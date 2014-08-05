@@ -1,0 +1,13 @@
+==== tests/cases/conformance/parser/ecmascript5/Statements/LabeledStatements/parser_duplicateLabel3.ts (2 errors) ====
+    target:
+    ~~~~~~
+!!! Unused label.
+    while (true) {
+      function f() {
+        target:
+        ~~~~~~
+!!! Unused label.
+        while (true) {
+        }
+      }
+    }

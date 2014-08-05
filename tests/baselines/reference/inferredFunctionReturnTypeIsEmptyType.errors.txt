@@ -1,4 +1,4 @@
-==== tests/cases/compiler/inferredFunctionReturnTypeIsEmptyType.ts (1 errors) ====
+==== tests/cases/compiler/inferredFunctionReturnTypeIsEmptyType.ts (2 errors) ====
     function foo() {
     ~~~~~~~~~~~~~~~~
         if (true) {
@@ -11,6 +11,8 @@
     ~~~~~~~~~~
             return "42";
     ~~~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~~~
+!!! Unreachable code detected.
         }
     ~~~~~
     };

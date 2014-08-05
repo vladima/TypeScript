@@ -2,14 +2,11 @@
     var t = 32;
     
     function noReturn(): {
-                         ~
+             ~~~~~~~~
+!!! Not all code paths return a value.
         n: string;
-    ~~~~~~~~~~~~~~
         y: number;
-    ~~~~~~~~~~~~~~
     }
-    ~
-!!! A function whose declared type is neither 'void' nor 'any' must return a value or consist of a single 'throw' statement.
     {
         var x = 4;
         var y = 10;

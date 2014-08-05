@@ -1,0 +1,9 @@
+==== tests/cases/compiler/recursiveBaseConstructorCreation1.ts (1 errors) ====
+    class C1 {
+    public func(param: C2): any { }
+           ~~~~
+!!! Not all code paths return a value.
+    }
+    class C2 extends C1 { }
+    var x = new C2(); // Valid
+    

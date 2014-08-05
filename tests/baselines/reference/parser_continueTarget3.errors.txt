@@ -1,0 +1,8 @@
+==== tests/cases/conformance/parser/ecmascript5/Statements/ContinueStatements/parser_continueTarget3.ts (1 errors) ====
+    target1:
+    target2:
+    ~~~~~~~
+!!! Unused label.
+    while (true) {
+      continue target1;
+    }

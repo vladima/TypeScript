@@ -1,0 +1,5 @@
+==== tests/cases/compiler/sourceMapValidationLabeled.ts (1 errors) ====
+    x:
+    ~
+!!! Unused label.
+    var b = 10;

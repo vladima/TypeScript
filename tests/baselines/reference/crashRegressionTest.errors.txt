@@ -1,4 +1,4 @@
-==== tests/cases/compiler/crashRegressionTest.ts (1 errors) ====
+==== tests/cases/compiler/crashRegressionTest.ts (2 errors) ====
     module MsPortal.Util.TemplateEngine {
         "use strict";
      
@@ -14,6 +14,8 @@
             }
      
             public text(value?: string): any {
+                   ~~~~
+!!! Not all code paths return a value.
                 this._templateStorage.templateSources[this._name] = value;
                                                            ~~~~~
 !!! Property '_name' does not exist on type 'StringTemplate'.

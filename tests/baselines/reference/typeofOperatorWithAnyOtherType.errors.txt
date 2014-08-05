@@ -1,4 +1,4 @@
-==== tests/cases/conformance/expressions/unaryOperators/typeofOperator/typeofOperatorWithAnyOtherType.ts (3 errors) ====
+==== tests/cases/conformance/expressions/unaryOperators/typeofOperator/typeofOperatorWithAnyOtherType.ts (10 errors) ====
     // typeof  operator on any type
     
     var ANY: any;
@@ -73,9 +73,23 @@
     var x: any[];
     var r: () => any;
     z: typeof ANY;
+    ~
+!!! Unused label.
     x: typeof ANY2;
+    ~
+!!! Unused label.
     r: typeof foo;
+    ~
+!!! Unused label.
     z: typeof objA.a;
+    ~
+!!! Unused label.
     z: typeof A.foo;
+    ~
+!!! Unused label.
     z: typeof M.n;
+    ~
+!!! Unused label.
     z: typeof obj1.x;
+    ~
+!!! Unused label.

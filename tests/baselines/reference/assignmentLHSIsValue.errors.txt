@@ -1,4 +1,4 @@
-==== tests/cases/conformance/expressions/assignmentOperator/assignmentLHSIsValue.ts (40 errors) ====
+==== tests/cases/conformance/expressions/assignmentOperator/assignmentLHSIsValue.ts (41 errors) ====
     // expected error for all the LHS of assignments
     var value;
     
@@ -66,6 +66,8 @@
     { a: 0} = value;
             ~
 !!! Declaration or statement expected.
+      ~
+!!! Unused label.
     
     // array literals
     ['', ''] = value;
