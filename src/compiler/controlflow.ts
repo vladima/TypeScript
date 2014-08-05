@@ -23,48 +23,13 @@ module ts {
 
     function checkControlFlow(decl: Node, error: (n: Node, message: DiagnosticMessage, arg0?: any) => void): ControlFlowState {
         var currentState = ControlFlowState.Reachable;
-        var trueState = ControlFlowState.Default;
-        var falseState = ControlFlowState.Default;
-        var isInSplit = false;
 
         function setState(newState: ControlFlowState) {
-            trueState = falseState = ControlFlowState.Default;
             currentState = newState;
-            isInSplit = false;
-        }
-
-        function setSplitState(newTrue: ControlFlowState, newFalse: ControlFlowState) {
-            trueState = newTrue;
-            falseState = newFalse;
-            currentState = ControlFlowState.Default;
-            isInSplit = true;
-        }
-
-        function split() {
-            if (!isInSplit) {
-                setSplitState(currentState, currentState);
-            }
-        }
-
-        function join() {
-            if (isInSplit) {
-                setState(or(trueState, falseState));
-                isInSplit = false;
-            }
         }
 
         function or(s1: ControlFlowState, s2: ControlFlowState): ControlFlowState {
             if (s1 === ControlFlowState.Reachable || s2 === ControlFlowState.Reachable) {
-                return ControlFlowState.Reachable;
-            }
-            if (s1 === ControlFlowState.ReportedUnreachable && s2 === ControlFlowState.ReportedUnreachable) {
-                return ControlFlowState.ReportedUnreachable;
-            }
-            return ControlFlowState.Unreachable;
-        }
-
-        function and(s1: ControlFlowState, s2: ControlFlowState): ControlFlowState {
-            if (s1 === ControlFlowState.Reachable && s2 === ControlFlowState.Reachable) {
                 return ControlFlowState.Reachable;
             }
             if (s1 === ControlFlowState.ReportedUnreachable && s2 === ControlFlowState.ReportedUnreachable) {
@@ -80,20 +45,6 @@ module ts {
             }
         }
 
-        function enterCondition(n: Node) {
-            if (n.kind === SyntaxKind.TrueKeyword) {
-                join();
-                setSplitState(currentState, ControlFlowState.Unreachable);
-            }
-            else if (n.kind === SyntaxKind.FalseKeyword) {
-                join();
-                setSplitState(ControlFlowState.Unreachable, currentState);
-            }
-            else {
-                split();
-            }
-        }
-
         // label name -> index in 'labelStack'
         var labels: Map<number> = {};
         // CF state at all seen labels
@@ -101,10 +52,13 @@ module ts {
         // indices of implicit labels in 'labelStack'
         var implicitLabels: number[] = [];
 
-        function pushNamedLabel(name: Identifier): void {
-            Debug.assert(!hasProperty(labels, name.text) || !labels[name.text]);
+        function pushNamedLabel(name: Identifier): boolean {
+            if (hasProperty(labels, name.text)) {
+                return false;
+            }
             var newLen = labelStack.push(ControlFlowState.Uninitialized);
             labels[name.text] = newLen - 1;
+            return true;
         }
 
         function pushImplicitLabel(): number {
@@ -166,10 +120,10 @@ module ts {
         function checkWhileStatement(n: WhileStatement): void {
             verifyReachable(n);
 
-            enterCondition(n.expression);
-            var enterWhileState = trueState;
-            var postWhileState = falseState;
-            setState(enterWhileState);
+            var preWhileState: ControlFlowState = n.expression.kind === SyntaxKind.FalseKeyword ? ControlFlowState.Unreachable : currentState;
+            var postWhileState: ControlFlowState = n.expression.kind === SyntaxKind.TrueKeyword ? ControlFlowState.Unreachable : currentState;
+
+            setState(preWhileState);
 
             var index = pushImplicitLabel();
             check(n.statement);
@@ -210,18 +164,17 @@ module ts {
         }
 
         function checkIfStatement(n: IfStatement): void {
-            enterCondition(n.expression);
-            var savedTrue = trueState;
-            var savedFalse = falseState;
+            var ifTrueState: ControlFlowState = n.expression.kind === SyntaxKind.FalseKeyword ? ControlFlowState.Unreachable : currentState;
+            var ifFalseState: ControlFlowState = n.expression.kind === SyntaxKind.TrueKeyword ? ControlFlowState.Unreachable : currentState;
 
-            setState(savedTrue);
+            setState(ifTrueState);
             check(n.thenStatement);
-            savedTrue = currentState;
+            ifTrueState = currentState;
 
-            setState(savedFalse);
+            setState(ifFalseState);
             check(n.elseStatement);
 
-            currentState = or(currentState, savedTrue);
+            currentState = or(currentState, ifTrueState);
         }
 
         function checkReturnOrThrow(n: Node): void {
@@ -235,7 +188,7 @@ module ts {
                 gotoLabel(n.label, currentState);
             }
             else {
-                gotoLabel(n.label, ControlFlowState.Unreachable); // TODO
+                gotoLabel(n.label, ControlFlowState.Unreachable); // touch label so it will be marked a used
             }
             setState(ControlFlowState.Unreachable);
         }
@@ -278,9 +231,11 @@ module ts {
 
         function checkLabelledStatement(n: LabelledStatement): void {
             verifyReachable(n);
-            pushNamedLabel(n.label);
+            var ok = pushNamedLabel(n.label);
             check(n.statement);
-            popNamedLabel(n.label, currentState);
+            if (ok) {
+                popNamedLabel(n.label, currentState);
+            }
         }
 
         function checkWithStatement(n: WithStatement): void {
@@ -358,6 +313,5 @@ module ts {
         Reachable           = 1,
         Unreachable         = 2,
         ReportedUnreachable = 3,
-        Default             = Unreachable
     }
 }
