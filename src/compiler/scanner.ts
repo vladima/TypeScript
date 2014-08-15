@@ -300,6 +300,10 @@ module ts {
         return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;
     }
 
+    export function isOctalDigit(ch: number): boolean {
+        return ch >= CharacterCodes._0 && ch <= CharacterCodes._7;
+    }
+
     export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boolean): number {
         while (true) {
             var ch = text.charCodeAt(pos);
@@ -350,6 +354,80 @@ module ts {
         }
     }
 
+    // Extract comments from the given source text starting at the given position. If trailing is false, whitespace is skipped until
+    // the first line break and comments between that location and the next token are returned. If trailing is true, comments occurring
+    // between the given position and the next line break are returned. The return value is an array containing a TextRange for each
+    // comment. Single-line comment ranges include the the beginning '//' characters but not the ending line break. Multi-line comment
+    // ranges include the beginning '/* and ending '*/' characters. The return value is undefined if no comments were found.
+    function getCommentRanges(text: string, pos: number, trailing: boolean): TextRange[] {
+        var result: TextRange[];
+        var collecting = trailing;
+        while (true) {
+            var ch = text.charCodeAt(pos);
+            switch (ch) {
+                case CharacterCodes.carriageReturn:
+                    if (text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) pos++;
+                case CharacterCodes.lineFeed:
+                    pos++;
+                    if (trailing) {
+                        return result;
+                    }
+                    collecting = true;
+                    continue;
+                case CharacterCodes.tab:
+                case CharacterCodes.verticalTab:
+                case CharacterCodes.formFeed:
+                case CharacterCodes.space:
+                    pos++;
+                    continue;
+                case CharacterCodes.slash:
+                    var nextChar = text.charCodeAt(pos + 1);
+                    if (nextChar === CharacterCodes.slash || nextChar === CharacterCodes.asterisk) {
+                        var startPos = pos;
+                        pos += 2;
+                        if (nextChar === CharacterCodes.slash) {
+                            while (pos < text.length) {
+                                if (isLineBreak(text.charCodeAt(pos))) {
+                                    break;
+                                }
+                                pos++;
+                            }
+                        }
+                        else {
+                            while (pos < text.length) {
+                                if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+                                    pos += 2;
+                                    break;
+                                }
+                                pos++;
+                            }
+                        }
+                        if (collecting) {
+                            if (!result) result = [];
+                            result.push({ pos: startPos, end: pos });
+                        }
+                        continue;
+                    }
+                    break;
+                default:
+                    if (ch > CharacterCodes.maxAsciiCharacter && (isWhiteSpace(ch) || isLineBreak(ch))) {
+                        pos++;
+                        continue;
+                    }
+                    break;
+            }
+            return result;
+        }
+    }
+
+    export function getLeadingComments(text: string, pos: number): TextRange[] {
+        return getCommentRanges(text, pos, /*trailing*/ false);
+    }
+
+    export function getTrailingComments(text: string, pos: number): TextRange[] {
+        return getCommentRanges(text, pos, /*trailing*/ true);
+    }
+
     export function createScanner(languageVersion: ScriptTarget, text?: string, onError?: ErrorCallback, onComment?: CommentCallback): Scanner {
         var pos: number;       // Current position (end position of text of current token)
         var len: number;       // Length of text
@@ -360,7 +438,9 @@ module ts {
         var precedingLineBreak: boolean;
 
         function error(message: DiagnosticMessage): void {
-            if (onError) onError(message);
+            if (onError) {
+                onError(message);
+            }
         }
 
         function isIdentifierStart(ch: number): boolean {
@@ -396,6 +476,14 @@ module ts {
                 }
             }
             return +(text.substring(start, end));
+        }
+
+        function scanOctalDigits(): number {
+            var start = pos;
+            while (isOctalDigit(text.charCodeAt(pos))) {
+                pos++;
+            }
+            return +(text.substring(start, pos));
         }
 
         function scanHexDigits(count: number, exact?: boolean): number {
@@ -681,7 +769,7 @@ module ts {
 
                             if (!commentClosed) {
                                 pos++;
-                                onError(Diagnostics.Asterisk_Slash_expected);
+                                error(Diagnostics.Asterisk_Slash_expected);
                             }
 
                             if (onComment) {
@@ -708,6 +796,14 @@ module ts {
                             tokenValue = "" + value;
                             return SyntaxKind.NumericLiteral;
                         }
+                        // Try to parse as an octal
+                        if (pos + 1 < len && isOctalDigit(text.charCodeAt(pos + 1))) {
+                            tokenValue = "" + scanOctalDigits();
+                            return SyntaxKind.NumericLiteral;
+                        }
+                        // This fall-through is a deviation from the EcmaScript grammar. The grammar says that a leading zero
+                        // can only be followed by an octal digit, a dot, or the end of the number literal. However, we are being
+                        // permissive and allowing decimal digits of the form 08* and 09* (which many browsers also do).
                     case CharacterCodes._1:
                     case CharacterCodes._2:
                     case CharacterCodes._3:

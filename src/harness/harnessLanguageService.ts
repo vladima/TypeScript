@@ -7,7 +7,7 @@ module Harness.LanguageService {
         public editRanges: { length: number; textChangeRange: TypeScript.TextChangeRange; }[] = [];
         public lineMap: TypeScript.LineMap = null;
 
-        constructor(public fileName: string, public content: string, public isOpen = true, public byteOrderMark: ts.ByteOrderMark = ts.ByteOrderMark.None) {
+        constructor(public fileName: string, public content: string, public isOpen = true) {
             this.setContent(content);
         }
 
@@ -91,7 +91,7 @@ module Harness.LanguageService {
     }
 
     class CancellationToken {
-        public static None: CancellationToken = new CancellationToken(null)
+        public static None: CancellationToken = new CancellationToken(null);
 
         constructor(private cancellationToken: ts.CancellationToken) {
         }
@@ -132,7 +132,6 @@ module Harness.LanguageService {
         getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot { return new ScriptSnapshotShimAdapter(this.shimHost.getScriptSnapshot(fileName));}
         getScriptVersion(fileName: string): number { return this.shimHost.getScriptVersion(fileName);}
         getScriptIsOpen(fileName: string): boolean { return this.shimHost.getScriptIsOpen(fileName); }
-        getScriptByteOrderMark(fileName: string): ts.ByteOrderMark { return this.shimHost.getScriptByteOrderMark(fileName);}
         getLocalizedDiagnosticMessages(): any { return JSON.parse(this.shimHost.getLocalizedDiagnosticMessages());}
         getCancellationToken(): ts.CancellationToken { return this.shimHost.getCancellationToken(); }
     }
@@ -145,10 +144,9 @@ module Harness.LanguageService {
             fileName: string,
             compilationSettings: ts.CompilerOptions,
             scriptSnapshot: TypeScript.IScriptSnapshot,
-            byteOrderMark: ts.ByteOrderMark,
             version: number,
             isOpen: boolean): ts.SourceFile {
-            return ts.createSourceFile(fileName, scriptSnapshot.getText(0, scriptSnapshot.getLength()), compilationSettings.target, byteOrderMark, version, isOpen);
+            return ts.createSourceFile(fileName, scriptSnapshot.getText(0, scriptSnapshot.getLength()), compilationSettings.target, version, isOpen);
         }
 
         public updateDocument(
@@ -177,7 +175,7 @@ module Harness.LanguageService {
         }
 
         public addDefaultLibrary() {
-            this.addScript("lib.d.ts", Harness.Compiler.libText);
+            this.addScript(Harness.Compiler.defaultLibFileName, Harness.Compiler.defaultLibSourceFile.text);
         }
 
         public getHostIdentifier(): string {
@@ -262,10 +260,6 @@ module Harness.LanguageService {
             return this.getScriptInfo(fileName).isOpen;
         }
 
-        public getScriptByteOrderMark(fileName: string): ts.ByteOrderMark {
-            return this.getScriptInfo(fileName).byteOrderMark;
-        }
-
         public getLocalizedDiagnosticMessages(): string {
             return JSON.stringify({});
         }
@@ -289,7 +283,7 @@ module Harness.LanguageService {
 
         /** Parse a file on disk given its fileName */
         public parseFile(fileName: string) {
-            var sourceText = TypeScript.ScriptSnapshot.fromString(Harness.IO.readFile(fileName))
+            var sourceText = TypeScript.ScriptSnapshot.fromString(Harness.IO.readFile(fileName));
             return this.parseSourceText(fileName, sourceText);
         }
 

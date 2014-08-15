@@ -421,7 +421,7 @@ module ts {
         nodeIsNestedInLabel(label: Identifier, requireIterationStatement: boolean, stopAtFunctionBoundary: boolean): ControlBlockContext;
     }
 
-    export function createSourceFile(filename: string, sourceText: string, languageVersion: ScriptTarget, byteOrderMark: ByteOrderMark, version: number = 0, isOpen: boolean = false): SourceFile {
+    export function createSourceFile(filename: string, sourceText: string, languageVersion: ScriptTarget, version: number = 0, isOpen: boolean = false): SourceFile {
         var file: SourceFile;
         var scanner: Scanner;
         var token: SyntaxKind;
@@ -1061,8 +1061,29 @@ module ts {
         function parseLiteralNode(): LiteralExpression {
             var node = <LiteralExpression>createNode(token);
             node.text = scanner.getTokenValue();
+            var tokenPos = scanner.getTokenPos();
             nextToken();
-            return finishNode(node);
+            finishNode(node);
+            
+            // Octal literals are not allowed in strict mode or ES5
+            // Note that theoretically the following condition would hold true literals like 009,
+            // which is not octal.But because of how the scanner separates the tokens, we would
+            // never get a token like this.Instead, we would get 00 and 9 as two separate tokens.
+            // We also do not need to check for negatives because any prefix operator would be part of a
+            // parent unary expression.
+            if (node.kind === SyntaxKind.NumericLiteral
+                && sourceText.charCodeAt(tokenPos) === CharacterCodes._0
+                && isOctalDigit(sourceText.charCodeAt(tokenPos + 1))) {
+
+                if (isInStrictMode) {
+                    grammarErrorOnNode(node, Diagnostics.Octal_literals_are_not_allowed_in_strict_mode);
+                }
+                else if (languageVersion >= ScriptTarget.ES5) {
+                    grammarErrorOnNode(node, Diagnostics.Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher);
+                }
+            }
+
+            return node;
         }
 
         function parseStringLiteral(): LiteralExpression {
@@ -3546,7 +3567,6 @@ module ts {
         file.nodeCount = nodeCount;
         file.identifierCount = identifierCount;
         file.version = version;
-        file.byteOrderMark = byteOrderMark;
         file.isOpen = isOpen;
         file.languageVersion = languageVersion;
         return file;
@@ -3591,12 +3611,12 @@ module ts {
             return filter(errors, e => !e.file);
         }
 
-        function addExtension(filename: string, extension: string): string {
-            return getBaseFilename(filename).indexOf(".") >= 0 ? filename : filename + extension;
+        function hasExtension(filename: string): boolean {
+            return getBaseFilename(filename).indexOf(".") >= 0;
         }
 
         function processRootFile(filename: string, isDefaultLib: boolean) {
-            processSourceFile(normalizePath(addExtension(filename, ".ts")), isDefaultLib);
+            processSourceFile(normalizePath(filename), isDefaultLib);
         }
 
         function processSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number) {
@@ -3604,11 +3624,18 @@ module ts {
                 var start = refPos;
                 var length = refEnd - refPos;
             }
-            if (!fileExtensionIs(filename, ".ts")) {
-                errors.push(createFileDiagnostic(refFile, start, length, Diagnostics.File_0_must_have_extension_ts_or_d_ts, filename));
+            if (hasExtension(filename)) {
+                if (!fileExtensionIs(filename, ".ts")) {
+                    errors.push(createFileDiagnostic(refFile, start, length, Diagnostics.File_0_must_have_extension_ts_or_d_ts, filename));
+                }
+                else if (!findSourceFile(filename, isDefaultLib, refFile, refPos, refEnd)) {
+                    errors.push(createFileDiagnostic(refFile, start, length, Diagnostics.File_0_not_found, filename));
+                }
             }
-            else if (!findSourceFile(filename, isDefaultLib, refFile, refPos, refEnd)) {
-                errors.push(createFileDiagnostic(refFile, start, length, Diagnostics.File_0_not_found, filename));
+            else {
+                if (!(findSourceFile(filename + ".ts", isDefaultLib, refFile, refPos, refEnd) || findSourceFile(filename + ".d.ts", isDefaultLib, refFile, refPos, refEnd))) {
+                    errors.push(createFileDiagnostic(refFile, start, length, Diagnostics.File_0_not_found, filename + ".ts"));
+                }
             }
         }
 

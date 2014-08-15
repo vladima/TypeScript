@@ -49,7 +49,7 @@ module TypeScript {
         return isNoDefaultLibRegex.exec(comment);
     }
 
-    export var tripleSlashReferenceRegExp = /^(\/\/\/\s*<reference\s+path=)('|")(.+?)\2\s*(static=('|")(.+?)\2\s*)*\/>/;
+    export var tripleSlashReferenceRegExp = /^(\/\/\/\s*<reference\s+path=)('|")(.+?)\2\s*(static=('|")(.+?)\5\s*)*\/>/;
 
     function getFileReferenceFromReferencePath(fileName: string, text: ISimpleText, position: number, comment: string, diagnostics: Diagnostic[]): IFileReference {
         // First, just see if they've written: /// <reference\s+
@@ -150,7 +150,7 @@ module TypeScript {
         var noDefaultLib = false;
         var diagnostics: Diagnostic[] = [];
         var referencedFiles: IFileReference[] = [];
-        var lineMap = text.lineMap()
+        var lineMap = text.lineMap();
 
         for (var i = 0, n = leadingTrivia.count(); i < n; i++) {
             var trivia = leadingTrivia.syntaxTriviaAt(i);

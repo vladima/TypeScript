@@ -47,6 +47,8 @@ module ts {
 
         var globals: SymbolTable = {};
 
+        var globalArraySymbol: Symbol;
+
         var globalObjectType: ObjectType;
         var globalFunctionType: ObjectType;
         var globalArrayType: ObjectType;
@@ -57,7 +59,6 @@ module ts {
 
         var stringLiteralTypes: Map<StringLiteralType> = {};
 
-        var fullTypeCheck = false;
         var emitExtends = false;
 
         var mergedSymbols: Symbol[] = [];
@@ -310,7 +311,7 @@ module ts {
                             else {
                                 return returnResolvedSymbol(result);
                             }
-                        }                        
+                        }
                         break;
                     case SyntaxKind.Method:
                     case SyntaxKind.Constructor:
@@ -451,7 +452,7 @@ module ts {
             return moduleSymbol;
         }
 
-        function getExportAssignmentSymbol(symbol: Symbol): Symbol {            
+        function getExportAssignmentSymbol(symbol: Symbol): Symbol {
             checkTypeOfExportAssignmentSymbol(symbol);
             var symbolLinks = getSymbolLinks(symbol);
             return symbolLinks.exportAssignSymbol === unknownSymbol ? undefined : symbolLinks.exportAssignSymbol;
@@ -621,8 +622,6 @@ module ts {
                 members, callSignatures, constructSignatures, stringIndexType, numberIndexType);
         }
 
-        // Takes a VariableDeclaration because it could be an exported var from a module (VariableDeclaration),
-        // a class or object type property (PropertyDeclaration), or a parameter property (ParameterDeclaration)
         function isOptionalProperty(propertySymbol: Symbol): boolean {
             if (propertySymbol.flags & SymbolFlags.Prototype) {
                 return false;
@@ -666,46 +665,68 @@ module ts {
             return callback(globals);
         }
 
-        function getAccessibleSymbol(symbol: Symbol, enclosingDeclaration: Node, meaning: SymbolFlags) {
-            function getAccessibleSymbolFromSymbolTable(symbols: SymbolTable) {
+        function getQualifiedLeftMeaning(rightMeaning: SymbolFlags) {
+            // If we are looking in value space, the parent meaning is value, other wise it is namespace
+            return rightMeaning === SymbolFlags.Value ? SymbolFlags.Value : SymbolFlags.Namespace;
+        }
+
+        function getAccessibleSymbolChain(symbol: Symbol, enclosingDeclaration: Node, meaning: SymbolFlags): Symbol[] {
+            function getAccessibleSymbolChainFromSymbolTable(symbols: SymbolTable): Symbol[] {
+                function canQualifySymbol(symbolFromSymbolTable: Symbol, meaning: SymbolFlags) {
+                    // If the symbol is equivalent and doesnt need futher qualification, this symbol is accessible
+                    if (!needsQualification(symbolFromSymbolTable, enclosingDeclaration, meaning)) {
+                        return true;
+                    }
+
+                    // If symbol needs qualification, make sure that parent is accessible, if it is then this symbol is accessible too
+                    var accessibleParent = getAccessibleSymbolChain(symbolFromSymbolTable.parent, enclosingDeclaration, getQualifiedLeftMeaning(meaning));
+                    return !!accessibleParent;
+                }
+
                 function isAccessible(symbolFromSymbolTable: Symbol, resolvedAliasSymbol?: Symbol) {
                     if (symbol === (resolvedAliasSymbol || symbolFromSymbolTable)) {
-                        // If the symbol is equivalent and doesnt need futher qualification, this symbol is accessible
-                        if (!needsQualification(symbolFromSymbolTable, enclosingDeclaration, meaning)) {
-                            return true;
-                        }
-
-                        // If symbol needs qualification, make sure that parent is accessible, if it is then this symbol is accessible too
-                        var accessibleParent = getAccessibleSymbol(symbolFromSymbolTable.parent, enclosingDeclaration, SymbolFlags.Namespace);
-                        return !!accessibleParent;
+                        // if the symbolFromSymbolTable is not external module (it could be if it was determined as ambient external module and would be in globals table)
+                        // and if symbolfrom symbolTable or alias resolution matches the symbol, 
+                        // check the symbol can be qualified, it is only then this symbol is accessible
+                        return !forEach(symbolFromSymbolTable.declarations, declaration => hasExternalModuleSymbol(declaration)) &&
+                            canQualifySymbol(symbolFromSymbolTable, meaning);
                     }
                 }
 
                 // If symbol is directly available by its name in the symbol table
-                if (isAccessible(symbols[symbol.name])) {
-                    return symbol;
+                if (isAccessible(lookUp(symbols, symbol.name))) {
+                    return [symbol];
                 }
 
                 // Check if symbol is any of the alias
                 return forEachValue(symbols, symbolFromSymbolTable => {
                     if (symbolFromSymbolTable.flags & SymbolFlags.Import) {
+                        var resolvedImportedSymbol = resolveImport(symbolFromSymbolTable);
                         if (isAccessible(symbolFromSymbolTable, resolveImport(symbolFromSymbolTable))) {
-                            return symbolFromSymbolTable;
+                            return [symbolFromSymbolTable];
+                        }
+
+                        // Look in the exported members, if we can find accessibleSymbolChain, symbol is accessible using this chain
+                        // but only if the symbolFromSymbolTable can be qualified
+                        var accessibleSymbolsFromExports = resolvedImportedSymbol.exports ? getAccessibleSymbolChainFromSymbolTable(resolvedImportedSymbol.exports) : undefined;
+                        if (accessibleSymbolsFromExports && canQualifySymbol(symbolFromSymbolTable, getQualifiedLeftMeaning(meaning))) {
+                            return [symbolFromSymbolTable].concat(accessibleSymbolsFromExports);
                         }
                     }
                 });
             }
 
             if (symbol) {
-                return forEachSymbolTableInScope(enclosingDeclaration, getAccessibleSymbolFromSymbolTable);
+                return forEachSymbolTableInScope(enclosingDeclaration, getAccessibleSymbolChainFromSymbolTable);
             }
+            return undefined;
         }
 
         function needsQualification(symbol: Symbol, enclosingDeclaration: Node, meaning: SymbolFlags) {
             var qualify = false;
             forEachSymbolTableInScope(enclosingDeclaration, symbolTable => {
                 // If symbol of this name is not available in the symbol table we are ok
-                if (!symbolTable[symbol.name]) {
+                if (!hasProperty(symbolTable, symbol.name)) {
                     // Continue to the next symbol table
                     return false;
                 }
@@ -730,6 +751,124 @@ module ts {
             return qualify;
         }
 
+        function isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node, meaning: SymbolFlags): SymbolAccessiblityResult {
+            if (symbol && enclosingDeclaration && !(symbol.flags & SymbolFlags.TypeParameter)) {
+                var initialSymbol = symbol;
+                var meaningToLook = meaning;
+                while (symbol) {
+                    // Symbol is accessible if it by itself is accessible
+                    var accessibleSymbolChain = getAccessibleSymbolChain(symbol, enclosingDeclaration, meaningToLook);
+                    if (accessibleSymbolChain) {
+                        var hasAccessibleDeclarations = hasVisibleDeclarations(accessibleSymbolChain[0]);
+                        if (!hasAccessibleDeclarations) {
+                            return {
+                                accessibility: SymbolAccessibility.NotAccessible,
+                                errorSymbolName: symbolToString(initialSymbol, enclosingDeclaration, meaning),
+                                errorModuleName: symbol !== initialSymbol ? symbolToString(symbol, enclosingDeclaration, SymbolFlags.Namespace) : undefined,
+                            };
+                        }
+                        return { accessibility: SymbolAccessibility.Accessible, aliasesToMakeVisible: hasAccessibleDeclarations.aliasesToMakeVisible };
+                    }
+
+                    // If we havent got the accessible symbol doesnt mean the symbol is actually inaccessible. 
+                    // It could be qualified symbol and hence verify the path
+                    // eg:
+                    // module m {
+                    //     export class c {
+                    //     }
+                    // }
+                    // var x: typeof m.c
+                    // In the above example when we start with checking if typeof m.c symbol is accessible,
+                    // we are going to see if c can be accessed in scope directly. 
+                    // But it cant, hence the accessible is going to be undefined, but that doesnt mean m.c is accessible
+                    // It is accessible if the parent m is accessible because then m.c can be accessed through qualification
+                    meaningToLook = getQualifiedLeftMeaning(meaning);
+                    symbol = symbol.parent;
+                }
+
+                // This could be a symbol that is not exported in the external module 
+                // or it could be a symbol from different external module that is not aliased and hence cannot be named
+                var symbolExternalModule = forEach(initialSymbol.declarations, declaration => getExternalModuleContainer(declaration));
+                if (symbolExternalModule) {
+                    var enclosingExternalModule = getExternalModuleContainer(enclosingDeclaration);
+                    if (symbolExternalModule !== enclosingExternalModule) {
+                        // name from different external module that is not visibile
+                        return {
+                            accessibility: SymbolAccessibility.CannotBeNamed,
+                            errorSymbolName: symbolToString(initialSymbol, enclosingDeclaration, meaning),
+                            errorModuleName: symbolToString(symbolExternalModule)
+                        };
+                    }
+                }
+
+                // Just a local name that is not accessible
+                return {
+                    accessibility: SymbolAccessibility.NotAccessible,
+                    errorSymbolName: symbolToString(initialSymbol, enclosingDeclaration, meaning),
+                };
+            }
+
+            return { accessibility: SymbolAccessibility.Accessible };
+
+            function getExternalModuleContainer(declaration: Declaration) {
+                for (; declaration; declaration = declaration.parent) {
+                    if (hasExternalModuleSymbol(declaration)) {
+                        return getSymbolOfNode(declaration);
+                    }
+                }
+            }
+        }
+
+        function hasExternalModuleSymbol(declaration: Declaration) {
+            return (declaration.kind === SyntaxKind.ModuleDeclaration && declaration.name.kind === SyntaxKind.StringLiteral) ||
+                (declaration.kind === SyntaxKind.SourceFile && isExternalModule(<SourceFile>declaration));
+        }
+
+        function hasVisibleDeclarations(symbol: Symbol): { aliasesToMakeVisible?: ImportDeclaration[]; } {
+            var aliasesToMakeVisible: ImportDeclaration[];
+            if (forEach(symbol.declarations, declaration => !getIsDeclarationVisible(declaration))) {
+                return undefined;
+            }
+            return { aliasesToMakeVisible: aliasesToMakeVisible };
+
+            function getIsDeclarationVisible(declaration: Declaration) {
+                if (!isDeclarationVisible(declaration)) {
+                    // Mark the unexported alias as visible if its parent is visible 
+                    // because these kind of aliases can be used to name types in declaration file
+                    if (declaration.kind === SyntaxKind.ImportDeclaration &&
+                        !(declaration.flags & NodeFlags.Export) &&
+                        isDeclarationVisible(declaration.parent)) {
+                        getNodeLinks(declaration).isVisible = true;
+                        if (aliasesToMakeVisible) {
+                            if (!contains(aliasesToMakeVisible, declaration)) {
+                                aliasesToMakeVisible.push(declaration);
+                            }
+                        }
+                        else {
+                            aliasesToMakeVisible = [declaration];
+                        }
+                        return true;
+                    }
+
+                    // Declaration is not visible
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        function isImportDeclarationEntityNameReferenceDeclarationVisibile(entityName: EntityName): SymbolAccessiblityResult {
+            var firstIdentifier = getFirstIdentifier(entityName);
+            var firstIdentifierName = identifierToString(<Identifier>firstIdentifier);
+            var symbolOfNameSpace = resolveName(entityName.parent, (<Identifier>firstIdentifier).text, SymbolFlags.Namespace, Diagnostics.Cannot_find_name_0, firstIdentifierName);
+            // Verify if the symbol is accessible
+            var hasNamespaceDeclarationsVisibile = hasVisibleDeclarations(symbolOfNameSpace);
+            return hasNamespaceDeclarationsVisibile ?
+                { accessibility: SymbolAccessibility.Accessible, aliasesToMakeVisible: hasNamespaceDeclarationsVisibile.aliasesToMakeVisible } :
+                { accessibility: SymbolAccessibility.NotAccessible, errorSymbolName: firstIdentifierName };
+        }
+
         // Enclosing declaration is optional when we dont want to get qualified name in the enclosing declaration scope
         // Meaning needs to be specified if the enclosing declaration is given
         function symbolToString(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
@@ -748,15 +887,27 @@ module ts {
                 // Properties/methods/Signatures/Constructors/TypeParameters do not need qualification
                 !(symbol.flags & SymbolFlags.PropertyOrAccessor & SymbolFlags.Signature & SymbolFlags.Constructor & SymbolFlags.Method & SymbolFlags.TypeParameter)) {
                 var symbolName: string;
-                while (symbol) { 
+                while (symbol) {
                     var isFirstName = !symbolName;
-                    var meaningToLook = isFirstName ? meaning : SymbolFlags.Namespace;
-                    var accessibleSymbol = getAccessibleSymbol(symbol, enclosingDeclaration, meaningToLook);
-                    symbolName = getSymbolName(accessibleSymbol || symbol) + (isFirstName ? "" : ("." + symbolName));
-                    if (accessibleSymbol && !needsQualification(accessibleSymbol, enclosingDeclaration, meaningToLook)) {
+                    var accessibleSymbolChain = getAccessibleSymbolChain(symbol, enclosingDeclaration, meaning);
+
+                    var currentSymbolName: string;
+                    if (accessibleSymbolChain) {
+                        currentSymbolName = ts.map(accessibleSymbolChain, accessibleSymbol => getSymbolName(accessibleSymbol)).join(".");
+                    }
+                    else {
+                        // If we didnt find accessible symbol chain for this symbol, break if this is external module
+                        if (!isFirstName && ts.forEach(symbol.declarations, declaration => hasExternalModuleSymbol(declaration))) {
+                            break;
+                        }
+                        currentSymbolName = getSymbolName(symbol);
+                    }
+                    symbolName = currentSymbolName + (isFirstName ? "" : ("." + symbolName));
+                    if (accessibleSymbolChain && !needsQualification(accessibleSymbolChain[0], enclosingDeclaration, accessibleSymbolChain.length === 1 ? meaning : getQualifiedLeftMeaning(meaning))) {
                         break;
                     }
-                    symbol = accessibleSymbol ? accessibleSymbol.parent : symbol.parent;
+                    symbol = accessibleSymbolChain ? accessibleSymbolChain[0].parent : symbol.parent;
+                    meaning = getQualifiedLeftMeaning(meaning);
                 }
 
                 return symbolName;
@@ -765,10 +916,15 @@ module ts {
             return getSymbolName(symbol);
         }
 
+        function writeSymbolToTextWriter(symbol: Symbol, enclosingDeclaration: Node, meaning: SymbolFlags, writer: TextWriter) {
+            writer.write(symbolToString(symbol, enclosingDeclaration, meaning));
+        }
+
         function createSingleLineTextWriter() {
             var result = "";
             return {
                 write(s: string) { result += s; },
+                writeSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) { writeSymbolToTextWriter(symbol, enclosingDeclaration, meaning, this); },
                 writeLine() { result += " "; },
                 increaseIndent() { },
                 decreaseIndent() { },
@@ -776,7 +932,7 @@ module ts {
             };
         }
 
-        function typeToString(type: Type, enclosingDeclaration?:Node, flags?: TypeFormatFlags): string {
+        function typeToString(type: Type, enclosingDeclaration?: Node, flags?: TypeFormatFlags): string {
             var stringWriter = createSingleLineTextWriter();
             // TODO(shkamat): typeToString should take enclosingDeclaration as input, once we have implemented enclosingDeclaration
             writeTypeToTextWriter(type, enclosingDeclaration, flags, stringWriter);
@@ -795,7 +951,7 @@ module ts {
                     writeTypeReference(<TypeReference>type);
                 }
                 else if (type.flags & (TypeFlags.Class | TypeFlags.Interface | TypeFlags.Enum | TypeFlags.TypeParameter)) {
-                    writer.write(symbolToString(type.symbol, enclosingDeclaration, SymbolFlags.Type));
+                    writer.writeSymbol(type.symbol, enclosingDeclaration, SymbolFlags.Type);
                 }
                 else if (type.flags & TypeFlags.Anonymous) {
                     writeAnonymousType(<ObjectType>type, allowFunctionOrConstructorTypeLiteral);
@@ -817,7 +973,7 @@ module ts {
                     writer.write("[]");
                 }
                 else {
-                    writer.write(symbolToString(type.target.symbol, enclosingDeclaration, SymbolFlags.Type));
+                    writer.writeSymbol(type.target.symbol, enclosingDeclaration, SymbolFlags.Type);
                     writer.write("<");
                     for (var i = 0; i < type.typeArguments.length; i++) {
                         if (i > 0) {
@@ -835,9 +991,12 @@ module ts {
                     writeTypeofSymbol(type);
                 }
                 // Use 'typeof T' for types of functions and methods that circularly reference themselves
-                // TODO(shkamat): correct the usuage of typeof function - always on functions that are visible
-                else if (type.symbol && type.symbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && typeStack && contains(typeStack, type)) {
+                else if (shouldWriteTypeOfFunctionSymbol()) {
                     writeTypeofSymbol(type);
+                }
+                else if (typeStack && contains(typeStack, type)) {
+                    // Recursive usage, use any
+                    writer.write("any");
                 }
                 else {
                     if (!typeStack) {
@@ -847,11 +1006,28 @@ module ts {
                     writeLiteralType(type, allowFunctionOrConstructorTypeLiteral);
                     typeStack.pop();
                 }
+
+                function shouldWriteTypeOfFunctionSymbol() {
+                    if (type.symbol) {
+                        var isStaticMethodSymbol = !!(type.symbol.flags & SymbolFlags.Method &&  // typeof static method
+                            ts.forEach(type.symbol.declarations, declaration => declaration.flags & NodeFlags.Static));
+                        var isNonLocalFunctionSymbol = !!(type.symbol.flags & SymbolFlags.Function) &&
+                            (type.symbol.parent || // is exported function symbol
+                            ts.forEach(type.symbol.declarations, declaration =>
+                                declaration.parent.kind === SyntaxKind.SourceFile || declaration.parent.kind === SyntaxKind.ModuleBlock));
+
+                        if (isStaticMethodSymbol || isNonLocalFunctionSymbol) {
+                            // typeof is allowed only for static/non local functions
+                            return !!(flags & TypeFormatFlags.UseTypeOfFunction) || // use typeof if format flags specify it
+                                (typeStack && contains(typeStack, type)); // it is type of the symbol uses itself recursively
+                        }
+                    }
+                }
             }
 
             function writeTypeofSymbol(type: ObjectType) {
                 writer.write("typeof ");
-                writer.write(symbolToString(type.symbol, enclosingDeclaration, SymbolFlags.Value));
+                writer.writeSymbol(type.symbol, enclosingDeclaration, SymbolFlags.Value);
             }
 
             function writeLiteralType(type: ObjectType, allowFunctionOrConstructorTypeLiteral: boolean) {
@@ -907,7 +1083,7 @@ module ts {
                     if (p.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfType(t).length) {
                         var signatures = getSignaturesOfType(t, SignatureKind.Call);
                         for (var j = 0; j < signatures.length; j++) {
-                            writer.write(symbolToString(p));
+                            writer.writeSymbol(p);
                             if (isOptionalProperty(p)) {
                                 writer.write("?");
                             }
@@ -917,7 +1093,7 @@ module ts {
                         }
                     }
                     else {
-                        writer.write(symbolToString(p));
+                        writer.writeSymbol(p);
                         if (isOptionalProperty(p)) {
                             writer.write("?");
                         }
@@ -939,7 +1115,7 @@ module ts {
                             writer.write(", ");
                         }
                         var tp = signature.typeParameters[i];
-                        writer.write(symbolToString(tp.symbol));
+                        writer.writeSymbol(tp.symbol);
                         var constraint = getConstraintOfTypeParameter(tp);
                         if (constraint) {
                             writer.write(" extends ");
@@ -957,7 +1133,7 @@ module ts {
                     if (getDeclarationFlagsFromSymbol(p) & NodeFlags.Rest) {
                         writer.write("...");
                     }
-                    writer.write(symbolToString(p));
+                    writer.writeSymbol(p);
                     if (p.valueDeclaration.flags & NodeFlags.QuestionMark || (<VariableDeclaration>p.valueDeclaration).initializer) {
                         writer.write("?");
                     }
@@ -991,29 +1167,30 @@ module ts {
                     // This is export assigned symbol node
                     var externalModuleSymbol = getSymbolOfNode(externalModule);
                     var exportAssignmentSymbol = getExportAssignmentSymbol(externalModuleSymbol);
+                    var resolvedExportSymbol: Symbol;
                     var symbolOfNode = getSymbolOfNode(node);
-                    if (exportAssignmentSymbol === symbolOfNode) {
+                    if (isSymbolUsedInExportAssignment(symbolOfNode)) {
+                        return true;
+                    }
+
+                    // if symbolOfNode is import declaration, resolve the symbol declaration and check
+                    if (symbolOfNode.flags & SymbolFlags.Import) {
+                        return isSymbolUsedInExportAssignment(resolveImport(symbolOfNode));
+                    }
+                }
+
+                // Check if the symbol is used in export assignment
+                function isSymbolUsedInExportAssignment(symbol: Symbol) {
+                    if (exportAssignmentSymbol === symbol) {
                         return true;
                     }
 
                     if (exportAssignmentSymbol && !!(exportAssignmentSymbol.flags & SymbolFlags.Import)) {
                         // if export assigned symbol is import declaration, resolve the import
-                        var resolvedExportSymbol = resolveImport(exportAssignmentSymbol);
-                        if (resolvedExportSymbol === symbolOfNode) {
+                        resolvedExportSymbol = resolvedExportSymbol || resolveImport(exportAssignmentSymbol);
+                        if (resolvedExportSymbol === symbol) {
                             return true;
                         }
-
-                        // TODO(shkamat): Chained import assignment
-                        // eg. a should be visible too.
-                        //module m {
-                        //    export module c {
-                        //        export class c {
-                        //        }
-                        //    }
-                        //}
-                        //import a = m.c;
-                        //import b = a;
-                        //export = b;
 
                         // Container of resolvedExportSymbol is visible
                         return forEach(resolvedExportSymbol.declarations, declaration => {
@@ -1033,25 +1210,21 @@ module ts {
             function determineIfDeclarationIsVisible() {
                 switch (node.kind) {
                     case SyntaxKind.VariableDeclaration:
-                        if (!(node.flags & NodeFlags.Export)) {
-                            // node.parent is variable statement so look at the variable statement's parent
-                            return isGlobalSourceFile(node.parent.parent) || isUsedInExportAssignment(node);
-                        }
-                        // Exported members are visible if parent is visible
-                        return isDeclarationVisible(node.parent.parent);
-
                     case SyntaxKind.ModuleDeclaration:
                     case SyntaxKind.ClassDeclaration:
                     case SyntaxKind.InterfaceDeclaration:
                     case SyntaxKind.FunctionDeclaration:
                     case SyntaxKind.EnumDeclaration:
                     case SyntaxKind.ImportDeclaration:
-                        if (!(node.flags & NodeFlags.Export)) {
-                            // TODO(shkamat): non exported aliases can be visible if they are referenced else where for value/type/namespace
-                            return isGlobalSourceFile(node.parent) || isUsedInExportAssignment(node);
+                        // In case of variable declaration, node.parent is variable statement so look at the variable statement's parent
+                        var parent = node.kind === SyntaxKind.VariableDeclaration ? node.parent.parent : node.parent;
+                        // If the node is not exported or it is not ambient module element (except import declaration)
+                        if (!(node.flags & NodeFlags.Export) &&
+                            !(node.kind !== SyntaxKind.ImportDeclaration && parent.kind !== SyntaxKind.SourceFile && isInAmbientContext(parent))) {
+                            return isGlobalSourceFile(parent) || isUsedInExportAssignment(node);
                         }
-                        // Exported members are visible if parent is visible
-                        return isDeclarationVisible(node.parent);
+                        // Exported members/ambient module elements (exception import declaraiton) are visible if parent is visible
+                        return isDeclarationVisible(parent);
 
                     case SyntaxKind.Property:
                     case SyntaxKind.Method:
@@ -1081,7 +1254,7 @@ module ts {
             if (node) {
                 var links = getNodeLinks(node);
                 if (links.isVisible === undefined) {
-                    links.isVisible = determineIfDeclarationIsVisible();
+                    links.isVisible = !!determineIfDeclarationIsVisible();
                 }
                 return links.isVisible;
             }
@@ -2030,7 +2203,7 @@ module ts {
             return links.resolvedType;
         }
 
-        function getGlobalType(name: string, arity: number = 0): ObjectType {
+        function getTypeOfGlobalSymbol(symbol: Symbol, arity: number): ObjectType {
 
             function getTypeDeclaration(symbol: Symbol): Declaration {
                 var declarations = symbol.declarations;
@@ -2040,15 +2213,12 @@ module ts {
                         case SyntaxKind.ClassDeclaration:
                         case SyntaxKind.InterfaceDeclaration:
                         case SyntaxKind.EnumDeclaration:
-                        case SyntaxKind.TypeLiteral:
-                        case SyntaxKind.FunctionDeclaration:
                             return declaration;
                     }
                 }
                 return undefined;
             }
 
-            var symbol = resolveName(undefined, name, SymbolFlags.Type, Diagnostics.Cannot_find_global_type_0, name);
             if (!symbol) {
                 return emptyObjectType;
             }
@@ -2064,29 +2234,26 @@ module ts {
             return <ObjectType>type;
         }
 
-        // arrayType argument is used as a backup in case if globalArrayType is not defined
-        function createArrayType(elementType: Type, arrayType?: ObjectType): Type {
-            var rootType = globalArrayType || arrayType;
-            return rootType !== emptyObjectType ? createTypeReference(<GenericType>rootType, [elementType]) : emptyObjectType;
+        function getGlobalSymbol(name: string): Symbol {
+            return resolveName(undefined, name, SymbolFlags.Type, Diagnostics.Cannot_find_global_type_0, name);
+        }
+
+        function getGlobalType(name: string): ObjectType {
+            return getTypeOfGlobalSymbol(getGlobalSymbol(name), 0);
+        }
+
+        function createArrayType(elementType: Type): Type {
+            // globalArrayType will be undefined if we get here during creation of the Array type. This for example happens if
+            // user code augments the Array type with call or construct signatures that have an array type as the return type.
+            // We instead use globalArraySymbol to obtain the (not yet fully constructed) Array type.
+            var arrayType = globalArrayType || getDeclaredTypeOfSymbol(globalArraySymbol);
+            return arrayType !== emptyObjectType ? createTypeReference(<GenericType>arrayType, [elementType]) : emptyObjectType;
         }
 
         function getTypeFromArrayTypeNode(node: ArrayTypeNode): Type {
             var links = getNodeLinks(node);
             if (!links.resolvedType) {
-                var arrayType = globalArrayType;
-                if (!arrayType) {
-                    // if user code contains augmentation for Array type that includes call\construct signatures with arrays as parameter\return types,
-                    // then we might step here then during initialization of the global Array type when globalArrayType is not yet set.
-                    // CODE: interface Array<T> { (): number[] }
-                    // in this case just resolve name 'Array' again and get declared type of symbol.
-                    // this type is the one that eventually should be set as 'globalArrayType'.
-                    // NOTE: this is specific to signatures since got signatures we realize parameter\return types.
-                    var arrayTypeSymbol = resolveName(node, "Array", SymbolFlags.Type, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined);
-                    Debug.assert(arrayTypeSymbol);
-                    arrayType = getDeclaredTypeOfSymbol(arrayTypeSymbol);
-                    Debug.assert(arrayType);
-                }
-                links.resolvedType = createArrayType(getTypeFromTypeNode(node.elementType), arrayType);
+                links.resolvedType = createArrayType(getTypeFromTypeNode(node.elementType));
             }
             return links.resolvedType;
         }
@@ -3806,21 +3973,40 @@ module ts {
         }
 
         // The candidate list orders groups in reverse, but within a group signatures are kept in declaration order
+        // A nit here is that we reorder only signatures that belong to the same symbol,
+        // so order how inherited signatures are processed is still preserved.
+        // interface A { (x: string): void }
+        // interface B extends A { (x: 'foo'): string }
+        // var b: B;
+        // b('foo') // <- here overloads should be processed as [(x:'foo'): string, (x: string): void]
         function collectCandidates(node: CallExpression, signatures: Signature[]): Signature[]{
             var result: Signature[] = [];
             var lastParent: Node;
+            var lastSymbol: Symbol;
+            var cutoffPos: number = 0;
             var pos: number;
             for (var i = 0; i < signatures.length; i++) {
                 var signature = signatures[i];
                 if (isCandidateSignature(node, signature)) {
-                    var parent = signature.declaration ? signature.declaration.parent : undefined;
-                    if (lastParent && parent === lastParent) {
-                        pos++;
+                    var symbol = signature.declaration && getSymbolOfNode(signature.declaration);
+                    var parent = signature.declaration && signature.declaration.parent;
+                    if (!lastSymbol || symbol === lastSymbol) {                        
+                        if (lastParent && parent === lastParent) {
+                            pos++;
+                        }
+                        else {
+                            lastParent = parent;
+                            pos = cutoffPos;
+                        }
                     }
                     else {
+                        // current declaration belongs to a different symbol
+                        // set cutoffPos so reorderings in the future won't change result set from 0 to cutoffPos
+                        pos = cutoffPos = result.length;
                         lastParent = parent;
-                        pos = 0;
                     }
+                    lastSymbol = symbol;
+
                     for (var j = result.length; j > pos; j--) {
                         result[j] = result[j - 1];
                     }
@@ -4308,7 +4494,7 @@ module ts {
                     }
                 }
             }
-            if (fullTypeCheck && !(links.flags & NodeCheckFlags.TypeChecked)) {
+            if (!(links.flags & NodeCheckFlags.TypeChecked)) {
 
                 checkSignatureDeclaration(node);
                 if (node.type) {
@@ -6214,7 +6400,6 @@ module ts {
         function checkSourceFile(node: SourceFile) {
             var links = getNodeLinks(node);
             if (!(links.flags & NodeCheckFlags.TypeChecked)) {
-                fullTypeCheck = true;
                 emitExtends = false;
                 potentialThisCollisions.length = 0;
                 forEach(node.statements, checkSourceElement);
@@ -6234,7 +6419,6 @@ module ts {
                 }
                 if (emitExtends) links.flags |= NodeCheckFlags.EmitExtends;
                 links.flags |= NodeCheckFlags.TypeChecked;
-                fullTypeCheck = false;
             }
         }
 
@@ -6724,7 +6908,10 @@ module ts {
                 isDeclarationVisible: isDeclarationVisible,
                 isImplementationOfOverload: isImplementationOfOverload,
                 writeTypeAtLocation: writeTypeAtLocation,
-                writeReturnTypeOfSignatureDeclaration: writeReturnTypeOfSignatureDeclaration
+                writeReturnTypeOfSignatureDeclaration: writeReturnTypeOfSignatureDeclaration,
+                writeSymbol: writeSymbolToTextWriter,
+                isSymbolAccessible: isSymbolAccessible,
+                isImportDeclarationEntityNameReferenceDeclarationVisibile: isImportDeclarationEntityNameReferenceDeclarationVisibile
             };
             checkProgram();
             return emitFiles(resolver);
@@ -6748,7 +6935,8 @@ module ts {
             getSymbolLinks(unknownSymbol).type = unknownType;
             globals[undefinedSymbol.name] = undefinedSymbol;
             // Initialize special types
-            globalArrayType = getGlobalType("Array", 1);
+            globalArraySymbol = getGlobalSymbol("Array");
+            globalArrayType = getTypeOfGlobalSymbol(globalArraySymbol, 1);
             globalObjectType = getGlobalType("Object");
             globalFunctionType = getGlobalType("Function");
             globalStringType = getGlobalType("String");
