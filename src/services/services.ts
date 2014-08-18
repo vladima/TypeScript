@@ -1258,7 +1258,11 @@ module ts {
         var formattingRulesProvider: TypeScript.Services.Formatting.RulesProvider;
         var hostCache: HostCache; // A cache of all the information about the files on the host side.
         var program: Program;
-        var typeChecker: TypeChecker;
+        // this checker is used to answer all LS questions except errors 
+        var typeInfoResolver: TypeChecker;
+        // the sole purpose of this checkes is to reutrn semantic diagnostics
+        // creation is deferred - use getFullTypeCheckChecker to get instance
+        var fullTypeCheckChecker_doNotAccessDirectly: TypeChecker;
         var useCaseSensitivefilenames = false;
         var sourceFilesByName: Map<SourceFile> = {};
         var documentRegistry = documentRegistry;
@@ -1272,6 +1276,10 @@ module ts {
 
         function getSourceFile(filename: string): SourceFile {
             return lookUp(sourceFilesByName, filename);
+        }
+
+        function getFullTypeCheckChecker() {
+            return fullTypeCheckChecker_doNotAccessDirectly || (fullTypeCheckChecker_doNotAccessDirectly = program.getTypeChecker(/*fullTypeCheck*/ true));
         }
 
         function createCompilerHost(): CompilerHost {
@@ -1405,7 +1413,8 @@ module ts {
 
             // Now create a new compiler
             program = createProgram(hostfilenames, compilationSettings, createCompilerHost());
-            typeChecker = program.getTypeChecker();
+            typeInfoResolver = program.getTypeChecker(/*fullTypeCheckMode*/ false);
+            fullTypeCheckChecker_doNotAccessDirectly = undefined;
         }
 
         /// Clean up any semantic caches that are not needed. 
@@ -1413,7 +1422,8 @@ module ts {
         /// We will just dump the typeChecker and recreate a new one. this should have the effect of destroying all the semantic caches.
         function cleanupSemanticCache(): void {
             if (program) {
-                typeChecker = program.getTypeChecker();
+                typeInfoResolver = program.getTypeChecker(/*fullTypeCheckMode*/ false);
+                fullTypeCheckChecker_doNotAccessDirectly = undefined;
             }
         }
 
@@ -1438,7 +1448,7 @@ module ts {
 
             filename = TypeScript.switchToForwardSlashes(filename)
 
-            return typeChecker.getDiagnostics(getSourceFile(filename).getSourceFile());
+            return getFullTypeCheckChecker().getDiagnostics(getSourceFile(filename));
         }
 
         function getCompilerOptionsDiagnostics() {
@@ -1680,12 +1690,12 @@ module ts {
                 entries: [],
                 symbols: {},
                 location: mappedNode,
-                typeChecker: typeChecker
+                typeChecker: typeInfoResolver
             };
 
             // Right of dot member completion list
             if (isRightOfDot) {
-                var type: Type = typeChecker.getTypeOfExpression(mappedNode);
+                var type: Type = typeInfoResolver.getTypeOfExpression(mappedNode);
                 if (!type) {
                     return undefined;
                 }
@@ -1733,7 +1743,7 @@ module ts {
                     isMemberCompletion = false;
                     /// TODO filter meaning based on the current context
                     var symbolMeanings = SymbolFlags.Type | SymbolFlags.Value | SymbolFlags.Namespace;
-                    var symbols = typeChecker.getSymbolsInScope(mappedNode, symbolMeanings);
+                    var symbols = typeInfoResolver.getSymbolsInScope(mappedNode, symbolMeanings);
 
                     getCompletionEntriesFromSymbols(symbols, activeCompletionSession);
                 }
@@ -1772,7 +1782,7 @@ module ts {
                     kind: completionEntry.kind,
                     kindModifiers: completionEntry.kindModifiers,
                     type: session.typeChecker.typeToString(type, session.location),
-                    fullSymbolName: typeChecker.symbolToString(symbol, session.location),
+                    fullSymbolName: typeInfoResolver.symbolToString(symbol, session.location),
                     docComment: ""
                 };
             }
@@ -1884,13 +1894,13 @@ module ts {
             var node = getNodeAtPosition(sourceFile.getSourceFile(), position);
             if (!node) return undefined;
 
-            var symbol = typeChecker.getSymbolInfo(node);
-            var type = symbol && typeChecker.getTypeOfSymbol(symbol);
+            var symbol = typeInfoResolver.getSymbolInfo(node);
+            var type = symbol && typeInfoResolver.getTypeOfSymbol(symbol);
             if (type) {
                 return {
-                    memberName: new TypeScript.MemberNameString(typeChecker.typeToString(type)),
+                    memberName: new TypeScript.MemberNameString(typeInfoResolver.typeToString(type)),
                     docComment: "",
-                    fullSymbolName: typeChecker.symbolToString(symbol, getContainerNode(node)),
+                    fullSymbolName: typeInfoResolver.symbolToString(symbol, getContainerNode(node)),
                     kind: getSymbolKind(symbol),
                     minChar: node.pos,
                     limChar: node.end
@@ -2036,7 +2046,7 @@ module ts {
                 return undefined;
             }
 
-            var symbol = typeChecker.getSymbolInfo(node);
+            var symbol = typeInfoResolver.getSymbolInfo(node);
 
             // Could not find a symbol e.g. node is string or number keyword,
             // or the symbol was an internal symbol and does not have a declaration e.g. undefined symbol
@@ -2047,10 +2057,10 @@ module ts {
             var result: DefinitionInfo[] = [];
 
             var declarations = symbol.getDeclarations();
-            var symbolName = typeChecker.symbolToString(symbol, node);
+            var symbolName = typeInfoResolver.symbolToString(symbol, node);
             var symbolKind = getSymbolKind(symbol);
             var containerSymbol = symbol.parent;
-            var containerName = containerSymbol ? typeChecker.symbolToString(containerSymbol, node) : "";
+            var containerName = containerSymbol ? typeInfoResolver.symbolToString(containerSymbol, node) : "";
             var containerKind = containerSymbol ? getSymbolKind(symbol) : "";
 
             if (!tryAddConstructSignature(symbol, node, symbolKind, symbolName, containerName, result) &&
