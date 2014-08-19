@@ -56,7 +56,7 @@ module ts.dataflow {
             currentState = newState;
         }
 
-        function walk(n: Node) {
+        function check(n: Node) {
             var symbol = context.getSymbolOfNode(n);
             if (n.locals) {
                 // register locals
@@ -67,9 +67,35 @@ module ts.dataflow {
                     }
                 }
             }
+
+            function checkBinaryExpression(n: BinaryExpression): void {
+            }
+
+            function checkReturnOrThrowStatement(n: Node): void {
+                if (n) {
+                    merge();
+                    check(n);
+                }
+                setState(unreachableState());
+            }
+
+            switch (n.kind) {
+                case SyntaxKind.BinaryExpression:
+                    checkBinaryExpression(<BinaryExpression>n);
+                    break;
+                case SyntaxKind.ReturnStatement:
+                    checkReturnOrThrowStatement((<ReturnStatement>n).expression);
+                    break;
+                case SyntaxKind.ThrowStatement:
+                    checkReturnOrThrowStatement((<ThrowStatement>n).expression);
+                    break;
+                case SyntaxKind.ArrayLiteral:
+                    break;
+                case SyntaxKind.
+            }
         }
 
-        walk(n);
+        check(n);
     }
 
     function reachableState() {
