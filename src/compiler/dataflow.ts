@@ -3,8 +3,9 @@
 /// <reference path="scanner.ts"/>
 /// <reference path="parser.ts"/>
 /// <reference path="binder.ts"/>
+/// <reference path="dataflow.state.ts"/>
 
-module ts {
+module ts.dataflow {
     export interface Context {
         resolveName(name: Identifier): Symbol;
         error(n: Node, message: DiagnosticMessage, arg0?: any) : void;
@@ -18,6 +19,42 @@ module ts {
     function check(n: Node, context: Context): void {
         var locals: Symbol[] = [];
         var currentState: State = reachableState();
+        var trueState: State;
+        var falseState: State;
+        var inForkedState: boolean = false;
+
+        function or(s1: State, s2: State): State {
+            if (s1.isReachable() === s2.isReachable()) {
+                // TODO: combine states
+            }
+            // in JS states the only possible transition is 'reachable -> unreachable'
+            Debug.assert(s1.isReachable() && !s2.isReachable());
+            return s1;
+        }
+
+        //function and(s1: State, s2: State): State {
+        //}
+
+        function fork(newTrueState: State, newFalseState: State): void {
+            if (!inForkedState) {
+                inForkedState = true;
+                currentState = undefined;
+                trueState = newTrueState;
+                falseState = newFalseState;
+            }
+        }
+
+        function merge() {
+            if (inForkedState) {
+                setState(or(trueState, falseState));
+            }
+        }
+
+        function setState(newState: State) {
+            inForkedState = false;
+            trueState = falseState = undefined;
+            currentState = newState;
+        }
 
         function walk(n: Node) {
             var symbol = context.getSymbolOfNode(n);
@@ -35,97 +72,13 @@ module ts {
         walk(n);
     }
 
-    interface State {
-        variables: BitVector;
-        reachability: Reachability;
+    function reachableState() {
+        var s = new State(1);
+        s.setReachable(true);
+        return s;
     }
 
-    function copyState(s: State) {
-        return {
-            variables: copyBitVector(s.variables),
-            reachability: s.reachability
-        };
-    }
-
-    function reachableState(): State {
-        return {
-            reachability: Reachability.Reachable,
-            variables: createBitVector()
-        };
-    }
-
-    function unreachableState(): State {
-        return {
-            reachability: Reachability.Unreachable,
-            variables: createBitVector()
-        };
-    }
-
-    interface BitVector {
-        bits0: number;
-        bits1plus?: number[];
-    }
-
-    function createBitVector(): BitVector {
-        return { bits0: 0 };
-    }
-
-    function copyBitVector(v: BitVector): BitVector {
-        if (v.bits1plus) {
-            return { bits0: v.bits0, bits1plus: v.bits1plus.slice(0) };
-        }
-        else {
-            return { bits0: v.bits0 };
-        }
-    }
-
-    function bitAt(v: BitVector, i: number): boolean {
-        // 5 => 2^5 === 32
-        var index = (i >> 5) - 1;
-        var n = index < 0 ? v.bits0 : v.bits1plus[index];
-        var mask = 1 << (i & 0x1f);
-        return (n & mask) !== 0;
-    }
-
-    function ensureSize(v: BitVector, i: number) {
-        if (v.bits1plus && v.bits1plus.length > i) {
-            return;
-        }
-        if (!v.bits1plus) {
-            v.bits1plus = new Array<number>();
-        }
-
-        while (v.bits1plus.length <= i) {
-            v.bits1plus.push(0);
-        }
-    }
-
-    function setBitAt(v: BitVector, i: number, value: boolean): void {
-        var index = (i >> 5) - 1;
-        if (index >= 0) {
-            ensureSize(v, index);
-        }
-        var mask = 1 << (i & 0x1f);
-        if (index < 0) {
-            if (value) {
-                v.bits0 |= mask;
-            }
-            else {
-                v.bits0 &= ~mask;
-            }
-        }
-        else {
-            if (value) {
-                v.bits1plus[index] |= mask;
-            }
-            else {
-                v.bits1plus[index] &= ~mask;
-            }
-        }
-    }
-
-    enum Reachability {
-        Reachable,
-        Unreachable,
+    function unreachableState() {
+        return new State(1);
     }
 }

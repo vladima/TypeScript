@@ -4,6 +4,7 @@
 /// <reference path="parser.ts"/>
 /// <reference path="binder.ts"/>
 /// <reference path="controlflow.ts"/>
+/// <reference path="dataflow.ts"/>
 /// <reference path="emitter.ts"/>
 
 module ts {
