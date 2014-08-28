@@ -24,6 +24,15 @@ module ts.dataflow {
             return this.setBitAt(0, reachable);
         }
 
+        or(other: State): State {
+            if (this.isReachable() === other.isReachable()) {
+                // TODO: combine;
+            }
+            // in JS states the only possible transition is 'reachable -> unreachable'
+            Debug.assert(this.isReachable() && !other.isReachable());
+            return this;
+        }
+
         getBitAt(i: number): boolean {
             if (i > this.maxSize) {
                 return false;

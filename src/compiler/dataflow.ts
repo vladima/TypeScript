@@ -18,84 +18,35 @@ module ts.dataflow {
 
     function check(n: Node, context: Context): void {
         var locals: Symbol[] = [];
-        var currentState: State = reachableState();
-        var trueState: State;
-        var falseState: State;
-        var inForkedState: boolean = false;
+
+        var env: CheckFlowEnv<State> = {
+            isReachable: s => s.isReachable(),
+            reachable: () => {
+                var s = new State(1);
+                s.setReachable(true);
+                return s;
+            },
+            unreachable: () => new State(1),
+            uninitialized: (): State => { throw "NYI" },
+            isUninitialized: (s: State): boolean => { throw "NYI" },
+            or: or,
+            error: context.error,
+            copy: (s: State): State => { throw "NYI" }
+        };
+
+        var walker: CheckFlowWalker<State> = (n, state, base) => {
+        };
+
+        checkFlow(n, env, walker);
+        return;
 
         function or(s1: State, s2: State): State {
-            if (s1.isReachable() === s2.isReachable()) {
-                // TODO: combine states
-            }
-            // in JS states the only possible transition is 'reachable -> unreachable'
-            Debug.assert(s1.isReachable() && !s2.isReachable());
-            return s1;
+            throw "NYI";
         }
 
         //function and(s1: State, s2: State): State {
         //}
 
-        function fork(newTrueState: State, newFalseState: State): void {
-            if (!inForkedState) {
-                inForkedState = true;
-                currentState = undefined;
-                trueState = newTrueState;
-                falseState = newFalseState;
-            }
-        }
-
-        function merge() {
-            if (inForkedState) {
-                setState(or(trueState, falseState));
-            }
-        }
-
-        function setState(newState: State) {
-            inForkedState = false;
-            trueState = falseState = undefined;
-            currentState = newState;
-        }
-
-        function check(n: Node) {
-            var symbol = context.getSymbolOfNode(n);
-            if (n.locals) {
-                // register locals
-                for (var id in n.locals) {
-                    var local = n.locals[id];
-                    if (local.flags & SymbolFlags.Variable) {
-                        locals.push(local);
-                    }
-                }
-            }
-
-            function checkBinaryExpression(n: BinaryExpression): void {
-            }
-
-            function checkReturnOrThrowStatement(n: Node): void {
-                if (n) {
-                    merge();
-                    check(n);
-                }
-                setState(unreachableState());
-            }
-
-            switch (n.kind) {
-                case SyntaxKind.BinaryExpression:
-                    checkBinaryExpression(<BinaryExpression>n);
-                    break;
-                case SyntaxKind.ReturnStatement:
-                    checkReturnOrThrowStatement((<ReturnStatement>n).expression);
-                    break;
-                case SyntaxKind.ThrowStatement:
-                    checkReturnOrThrowStatement((<ThrowStatement>n).expression);
-                    break;
-                case SyntaxKind.ArrayLiteral:
-                    break;
-                case SyntaxKind.
-            }
-        }
-
-        check(n);
     }
 
     function reachableState() {
