@@ -561,7 +561,7 @@ interface Math {
       */
     atan(x: number): number;
     /**
-      * Returns the angle (in radians) from the X axis to a point.
+      * Returns the angle (in radians) from the X axis to a point (y,x).
       * @param y A numeric expression representing the cartesian y-coordinate.
       * @param x A numeric expression representing the cartesian x-coordinate.
       */
@@ -1628,7 +1628,7 @@ interface IteratorResult<T> {
 }
 
 interface Iterator<T> {
-    next(value?: any): IteratorResult<T>;
+    next(): IteratorResult<T>;
     return?(value?: any): IteratorResult<T>;
     throw?(e?: any): IteratorResult<T>;
 }
