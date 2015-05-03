@@ -20441,7 +20441,7 @@ var ts;
                 checkExpressionCached(node.expression);
             }
             checkExternalModuleExports(container);
-            if (node.isExportEquals) {
+            if (node.isExportEquals && !ts.isInAmbientContext(node)) {
                 if (languageVersion >= 2 /* ES6 */) {
                     // export assignment is deprecated in es6 or above
                     grammarErrorOnNode(node, ts.Diagnostics.Export_assignment_cannot_be_used_when_targeting_ECMAScript_6_or_higher_Consider_using_export_default_instead);
@@ -24116,13 +24116,13 @@ var ts;
     // targetSourceFile is when users only want one file in entire project to be emitted. This is used in compileOnSave feature
     function emitFiles(resolver, host, targetSourceFile) {
         // emit output for the __extends helper function
-        var extendsHelper = "\nvar __extends = this.__extends || function (d, b) {\n    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];\n    function __() { this.constructor = d; }\n    __.prototype = b.prototype;\n    d.prototype = new __();\n};";
+        var extendsHelper = "\nvar __extends = (this && this.__extends) || function (d, b) {\n    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];\n    function __() { this.constructor = d; }\n    __.prototype = b.prototype;\n    d.prototype = new __();\n};";
         // emit output for the __decorate helper function
-        var decorateHelper = "\nif (typeof __decorate !== \"function\") __decorate = function (decorators, target, key, desc) {\n    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") return Reflect.decorate(decorators, target, key, desc);\n    switch (arguments.length) {\n        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);\n        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);\n        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);\n    }\n};";
+        var decorateHelper = "\nvar __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {\n    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") return Reflect.decorate(decorators, target, key, desc);\n    switch (arguments.length) {\n        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);\n        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);\n        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);\n    }\n};";
         // emit output for the __metadata helper function
-        var metadataHelper = "\nif (typeof __metadata !== \"function\") __metadata = function (k, v) {\n    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);\n};";
+        var metadataHelper = "\nvar __metadata = (this && this.__metadata) || function (k, v) {\n    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);\n};";
         // emit output for the __param helper function
-        var paramHelper = "\nif (typeof __param !== \"function\") __param = function (paramIndex, decorator) {\n    return function (target, key) { decorator(target, key, paramIndex); }\n};";
+        var paramHelper = "\nvar __param = (this && this.__param) || function (paramIndex, decorator) {\n    return function (target, key) { decorator(target, key, paramIndex); }\n};";
         var compilerOptions = host.getCompilerOptions();
         var languageVersion = compilerOptions.target || 0 /* ES3 */;
         var sourceMapDataList = compilerOptions.sourceMap || compilerOptions.inlineSourceMap ? [] : undefined;
@@ -29109,22 +29109,25 @@ var ts;
                 emitDetachedComments(node);
                 // emit prologue directives prior to __extends
                 var startIndex = emitDirectivePrologues(node.statements, false);
-                // Only Emit __extends function when target ES5.
-                // For target ES6 and above, we can emit classDeclaration as is.
-                if ((languageVersion < 2 /* ES6 */) && (!extendsEmitted && resolver.getNodeCheckFlags(node) & 8 /* EmitExtends */)) {
-                    writeLines(extendsHelper);
-                    extendsEmitted = true;
-                }
-                if (!decorateEmitted && resolver.getNodeCheckFlags(node) & 512 /* EmitDecorate */) {
-                    writeLines(decorateHelper);
-                    if (compilerOptions.emitDecoratorMetadata) {
-                        writeLines(metadataHelper);
+                // Only emit helpers if the user did not say otherwise.
+                if (!compilerOptions.noEmitHelpers) {
+                    // Only Emit __extends function when target ES5.
+                    // For target ES6 and above, we can emit classDeclaration as is.
+                    if ((languageVersion < 2 /* ES6 */) && (!extendsEmitted && resolver.getNodeCheckFlags(node) & 8 /* EmitExtends */)) {
+                        writeLines(extendsHelper);
+                        extendsEmitted = true;
                     }
-                    decorateEmitted = true;
-                }
-                if (!paramEmitted && resolver.getNodeCheckFlags(node) & 1024 /* EmitParam */) {
-                    writeLines(paramHelper);
-                    paramEmitted = true;
+                    if (!decorateEmitted && resolver.getNodeCheckFlags(node) & 512 /* EmitDecorate */) {
+                        writeLines(decorateHelper);
+                        if (compilerOptions.emitDecoratorMetadata) {
+                            writeLines(metadataHelper);
+                        }
+                        decorateEmitted = true;
+                    }
+                    if (!paramEmitted && resolver.getNodeCheckFlags(node) & 1024 /* EmitParam */) {
+                        writeLines(paramHelper);
+                        paramEmitted = true;
+                    }
                 }
                 if (ts.isExternalModule(node) || compilerOptions.separateCompilation) {
                     if (languageVersion >= 2 /* ES6 */) {
@@ -29508,7 +29511,6 @@ var ts;
     }
     ts.emitFiles = emitFiles;
 })(ts || (ts = {}));
-/// <reference path="sys.ts" />
 /// <reference path="emitter.ts" />
 var ts;
 (function (ts) {
@@ -29518,90 +29520,6 @@ var ts;
     /* @internal */ ts.ioWriteTime = 0;
     /** The version of the TypeScript compiler release */
     ts.version = "1.5.0";
-    function findConfigFile(searchPath) {
-        var fileName = "tsconfig.json";
-        while (true) {
-            if (ts.sys.fileExists(fileName)) {
-                return fileName;
-            }
-            var parentPath = ts.getDirectoryPath(searchPath);
-            if (parentPath === searchPath) {
-                break;
-            }
-            searchPath = parentPath;
-            fileName = "../" + fileName;
-        }
-        return undefined;
-    }
-    ts.findConfigFile = findConfigFile;
-    function createCompilerHost(options, setParentNodes) {
-        var currentDirectory;
-        var existingDirectories = {};
-        function getCanonicalFileName(fileName) {
-            // if underlying system can distinguish between two files whose names differs only in cases then file name already in canonical form.
-            // otherwise use toLowerCase as a canonical form.
-            return ts.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
-        }
-        // returned by CScript sys environment
-        var unsupportedFileEncodingErrorCode = -2147024809;
-        function getSourceFile(fileName, languageVersion, onError) {
-            var text;
-            try {
-                var start = new Date().getTime();
-                text = ts.sys.readFile(fileName, options.charset);
-                ts.ioReadTime += new Date().getTime() - start;
-            }
-            catch (e) {
-                if (onError) {
-                    onError(e.number === unsupportedFileEncodingErrorCode
-                        ? ts.createCompilerDiagnostic(ts.Diagnostics.Unsupported_file_encoding).messageText
-                        : e.message);
-                }
-                text = "";
-            }
-            return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, setParentNodes) : undefined;
-        }
-        function directoryExists(directoryPath) {
-            if (ts.hasProperty(existingDirectories, directoryPath)) {
-                return true;
-            }
-            if (ts.sys.directoryExists(directoryPath)) {
-                existingDirectories[directoryPath] = true;
-                return true;
-            }
-            return false;
-        }
-        function ensureDirectoriesExist(directoryPath) {
-            if (directoryPath.length > ts.getRootLength(directoryPath) && !directoryExists(directoryPath)) {
-                var parentDirectory = ts.getDirectoryPath(directoryPath);
-                ensureDirectoriesExist(parentDirectory);
-                ts.sys.createDirectory(directoryPath);
-            }
-        }
-        function writeFile(fileName, data, writeByteOrderMark, onError) {
-            try {
-                var start = new Date().getTime();
-                ensureDirectoriesExist(ts.getDirectoryPath(ts.normalizePath(fileName)));
-                ts.sys.writeFile(fileName, data, writeByteOrderMark);
-                ts.ioWriteTime += new Date().getTime() - start;
-            }
-            catch (e) {
-                if (onError) {
-                    onError(e.message);
-                }
-            }
-        }
-        return {
-            getSourceFile: getSourceFile,
-            getDefaultLibFileName: function (options) { return ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath())), ts.getDefaultLibFileName(options)); },
-            writeFile: writeFile,
-            getCurrentDirectory: function () { return currentDirectory || (currentDirectory = ts.sys.getCurrentDirectory()); },
-            useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
-            getCanonicalFileName: getCanonicalFileName,
-            getNewLine: function () { return ts.sys.newLine; }
-        };
-    }
-    ts.createCompilerHost = createCompilerHost;
     function getPreEmitDiagnostics(program, sourceFile) {
         var diagnostics = program.getSyntacticDiagnostics(sourceFile).concat(program.getGlobalDiagnostics()).concat(program.getSemanticDiagnostics(sourceFile));
         if (program.getCompilerOptions().declaration) {
@@ -29633,7 +29551,8 @@ var ts;
         }
     }
     ts.flattenDiagnosticMessageText = flattenDiagnosticMessageText;
-    function createProgram(rootNames, options, host) {
+    /* @internal */
+    function createPortableProgram(rootNames, options, host) {
         var program;
         var files = [];
         var filesByName = {};
@@ -29643,7 +29562,6 @@ var ts;
         var diagnosticsProducingTypeChecker;
         var noDiagnosticsTypeChecker;
         var start = new Date().getTime();
-        host = host || createCompilerHost(options);
         ts.forEach(rootNames, function (name) { return processRootFile(name, false); });
         if (!seenNoDefaultLib) {
             processRootFile(host.getDefaultLibFileName(options), true);
@@ -30046,7 +29964,151 @@ var ts;
             }
         }
     }
+    ts.createPortableProgram = createPortableProgram;
+    /*
+     * This function will compile source text from 'input' argument using specified compiler options.
+     * If not options are provided - it will use a set of default compiler options.
+     * Extra compiler options that will unconditionally be used bu this function are:
+     * - separateCompilation = true
+     * - allowNonTsExtensions = true
+     */
+    function portableTranspile(input, compilerOptions, fileName, diagnostics, newLine) {
+        var options = compilerOptions ? ts.clone(compilerOptions) : { target: 1 /* ES5 */ };
+        options.separateCompilation = true;
+        // Filename can be non-ts file.
+        options.allowNonTsExtensions = true;
+        // Parse
+        var inputFileName = fileName || "module.ts";
+        var sourceFile = ts.createSourceFile(inputFileName, input, options.target);
+        // Store syntactic diagnostics
+        if (diagnostics && sourceFile.parseDiagnostics) {
+            diagnostics.push.apply(diagnostics, sourceFile.parseDiagnostics);
+        }
+        // Output
+        var outputText;
+        // Create a compilerHost object to allow the compiler to read and write files
+        var compilerHost = {
+            getSourceFile: function (fileName, target) { return fileName === inputFileName ? sourceFile : undefined; },
+            writeFile: function (name, text, writeByteOrderMark) {
+                ts.Debug.assert(outputText === undefined, "Unexpected multiple outputs for the file: " + name);
+                outputText = text;
+            },
+            getDefaultLibFileName: function () { return "lib.d.ts"; },
+            useCaseSensitiveFileNames: function () { return false; },
+            getCanonicalFileName: function (fileName) { return fileName; },
+            getCurrentDirectory: function () { return ""; },
+            getNewLine: function () { return newLine || "\r\n"; }
+        };
+        var program = createPortableProgram([inputFileName], options, compilerHost);
+        if (diagnostics) {
+            diagnostics.push.apply(diagnostics, program.getGlobalDiagnostics());
+        }
+        // Emit
+        program.emit();
+        ts.Debug.assert(outputText !== undefined, "Output generation failed");
+        return outputText;
+    }
+    ts.portableTranspile = portableTranspile;
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = ts;
+    }
+})(ts || (ts = {}));
+/// <reference path="sys.ts" />
+/// <reference path="portableProgram.ts" />
+var ts;
+(function (ts) {
+    function findConfigFile(searchPath) {
+        var fileName = "tsconfig.json";
+        while (true) {
+            if (ts.sys.fileExists(fileName)) {
+                return fileName;
+            }
+            var parentPath = ts.getDirectoryPath(searchPath);
+            if (parentPath === searchPath) {
+                break;
+            }
+            searchPath = parentPath;
+            fileName = "../" + fileName;
+        }
+        return undefined;
+    }
+    ts.findConfigFile = findConfigFile;
+    function createCompilerHost(options, setParentNodes) {
+        var currentDirectory;
+        var existingDirectories = {};
+        function getCanonicalFileName(fileName) {
+            // if underlying system can distinguish between two files whose names differs only in cases then file name already in canonical form.
+            // otherwise use toLowerCase as a canonical form.
+            return ts.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+        }
+        // returned by CScript sys environment
+        var unsupportedFileEncodingErrorCode = -2147024809;
+        function getSourceFile(fileName, languageVersion, onError) {
+            var text;
+            try {
+                var start = new Date().getTime();
+                text = ts.sys.readFile(fileName, options.charset);
+                ts.ioReadTime += new Date().getTime() - start;
+            }
+            catch (e) {
+                if (onError) {
+                    onError(e.number === unsupportedFileEncodingErrorCode
+                        ? ts.createCompilerDiagnostic(ts.Diagnostics.Unsupported_file_encoding).messageText
+                        : e.message);
+                }
+                text = "";
+            }
+            return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, setParentNodes) : undefined;
+        }
+        function directoryExists(directoryPath) {
+            if (ts.hasProperty(existingDirectories, directoryPath)) {
+                return true;
+            }
+            if (ts.sys.directoryExists(directoryPath)) {
+                existingDirectories[directoryPath] = true;
+                return true;
+            }
+            return false;
+        }
+        function ensureDirectoriesExist(directoryPath) {
+            if (directoryPath.length > ts.getRootLength(directoryPath) && !directoryExists(directoryPath)) {
+                var parentDirectory = ts.getDirectoryPath(directoryPath);
+                ensureDirectoriesExist(parentDirectory);
+                ts.sys.createDirectory(directoryPath);
+            }
+        }
+        function writeFile(fileName, data, writeByteOrderMark, onError) {
+            try {
+                var start = new Date().getTime();
+                ensureDirectoriesExist(ts.getDirectoryPath(ts.normalizePath(fileName)));
+                ts.sys.writeFile(fileName, data, writeByteOrderMark);
+                ts.ioWriteTime += new Date().getTime() - start;
+            }
+            catch (e) {
+                if (onError) {
+                    onError(e.message);
+                }
+            }
+        }
+        return {
+            getSourceFile: getSourceFile,
+            getDefaultLibFileName: function (options) { return ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath())), ts.getDefaultLibFileName(options)); },
+            writeFile: writeFile,
+            getCurrentDirectory: function () { return currentDirectory || (currentDirectory = ts.sys.getCurrentDirectory()); },
+            useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
+            getCanonicalFileName: getCanonicalFileName,
+            getNewLine: function () { return ts.sys.newLine; }
+        };
+    }
+    ts.createCompilerHost = createCompilerHost;
+    function createProgram(rootNames, options, host) {
+        return ts.createPortableProgram(rootNames, options, host || createCompilerHost(options));
+    }
     ts.createProgram = createProgram;
+    function transpile(input, compilerOptions, fileName, diagnostics, newLine) {
+        return ts.portableTranspile(input, compilerOptions, fileName, diagnostics, ts.sys.newLine);
+    }
+    ts.transpile = transpile;
 })(ts || (ts = {}));
 /// <reference path="sys.ts"/>
 /// <reference path="types.ts"/>
@@ -30120,6 +30182,10 @@ var ts;
             name: "noEmit",
             type: "boolean",
             description: ts.Diagnostics.Do_not_emit_outputs
+        },
+        {
+            name: "noEmitHelpers",
+            type: "boolean"
         },
         {
             name: "noEmitOnError",
@@ -35472,7 +35538,7 @@ var ts;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
 /// <reference path="..\compiler\program.ts"/>
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -36218,7 +36284,7 @@ var ts;
     })(ts.OutputFileType || (ts.OutputFileType = {}));
     var OutputFileType = ts.OutputFileType;
     (function (EndOfLineState) {
-        EndOfLineState[EndOfLineState["Start"] = 0] = "Start";
+        EndOfLineState[EndOfLineState["None"] = 0] = "None";
         EndOfLineState[EndOfLineState["InMultiLineCommentTrivia"] = 1] = "InMultiLineCommentTrivia";
         EndOfLineState[EndOfLineState["InSingleQuoteStringLiteral"] = 2] = "InSingleQuoteStringLiteral";
         EndOfLineState[EndOfLineState["InDoubleQuoteStringLiteral"] = 3] = "InDoubleQuoteStringLiteral";
@@ -36320,10 +36386,31 @@ var ts;
         ClassificationTypeNames.interfaceName = "interface name";
         ClassificationTypeNames.moduleName = "module name";
         ClassificationTypeNames.typeParameterName = "type parameter name";
-        ClassificationTypeNames.typeAlias = "type alias name";
+        ClassificationTypeNames.typeAliasName = "type alias name";
+        ClassificationTypeNames.parameterName = "parameter name";
         return ClassificationTypeNames;
     })();
     ts.ClassificationTypeNames = ClassificationTypeNames;
+    (function (ClassificationType) {
+        ClassificationType[ClassificationType["comment"] = 1] = "comment";
+        ClassificationType[ClassificationType["identifier"] = 2] = "identifier";
+        ClassificationType[ClassificationType["keyword"] = 3] = "keyword";
+        ClassificationType[ClassificationType["numericLiteral"] = 4] = "numericLiteral";
+        ClassificationType[ClassificationType["operator"] = 5] = "operator";
+        ClassificationType[ClassificationType["stringLiteral"] = 6] = "stringLiteral";
+        ClassificationType[ClassificationType["regularExpressionLiteral"] = 7] = "regularExpressionLiteral";
+        ClassificationType[ClassificationType["whiteSpace"] = 8] = "whiteSpace";
+        ClassificationType[ClassificationType["text"] = 9] = "text";
+        ClassificationType[ClassificationType["punctuation"] = 10] = "punctuation";
+        ClassificationType[ClassificationType["className"] = 11] = "className";
+        ClassificationType[ClassificationType["enumName"] = 12] = "enumName";
+        ClassificationType[ClassificationType["interfaceName"] = 13] = "interfaceName";
+        ClassificationType[ClassificationType["moduleName"] = 14] = "moduleName";
+        ClassificationType[ClassificationType["typeParameterName"] = 15] = "typeParameterName";
+        ClassificationType[ClassificationType["typeAliasName"] = 16] = "typeAliasName";
+        ClassificationType[ClassificationType["parameterName"] = 17] = "parameterName";
+    })(ts.ClassificationType || (ts.ClassificationType = {}));
+    var ClassificationType = ts.ClassificationType;
     function displayPartsToString(displayParts) {
         if (displayParts) {
             return ts.map(displayParts, function (displayPart) { return displayPart.text; }).join("");
@@ -36483,50 +36570,6 @@ var ts;
         sourceFile.version = version;
         sourceFile.scriptSnapshot = scriptSnapshot;
     }
-    /*
-     * This function will compile source text from 'input' argument using specified compiler options.
-     * If not options are provided - it will use a set of default compiler options.
-     * Extra compiler options that will unconditionally be used bu this function are:
-     * - separateCompilation = true
-     * - allowNonTsExtensions = true
-     */
-    function transpile(input, compilerOptions, fileName, diagnostics) {
-        var options = compilerOptions ? ts.clone(compilerOptions) : getDefaultCompilerOptions();
-        options.separateCompilation = true;
-        // Filename can be non-ts file.
-        options.allowNonTsExtensions = true;
-        // Parse
-        var inputFileName = fileName || "module.ts";
-        var sourceFile = ts.createSourceFile(inputFileName, input, options.target);
-        // Store syntactic diagnostics
-        if (diagnostics && sourceFile.parseDiagnostics) {
-            diagnostics.push.apply(diagnostics, sourceFile.parseDiagnostics);
-        }
-        // Output
-        var outputText;
-        // Create a compilerHost object to allow the compiler to read and write files
-        var compilerHost = {
-            getSourceFile: function (fileName, target) { return fileName === inputFileName ? sourceFile : undefined; },
-            writeFile: function (name, text, writeByteOrderMark) {
-                ts.Debug.assert(outputText === undefined, "Unexpected multiple outputs for the file: " + name);
-                outputText = text;
-            },
-            getDefaultLibFileName: function () { return "lib.d.ts"; },
-            useCaseSensitiveFileNames: function () { return false; },
-            getCanonicalFileName: function (fileName) { return fileName; },
-            getCurrentDirectory: function () { return ""; },
-            getNewLine: function () { return (ts.sys && ts.sys.newLine) || "\r\n"; }
-        };
-        var program = ts.createProgram([inputFileName], options, compilerHost);
-        if (diagnostics) {
-            diagnostics.push.apply(diagnostics, program.getGlobalDiagnostics());
-        }
-        // Emit
-        program.emit();
-        ts.Debug.assert(outputText !== undefined, "Output generation failed");
-        return outputText;
-    }
-    ts.transpile = transpile;
     function createLanguageServiceSourceFile(fileName, scriptSnapshot, scriptTarget, version, setNodeParents) {
         var sourceFile = ts.createSourceFile(fileName, scriptSnapshot.getText(0, scriptSnapshot.getLength()), scriptTarget, setNodeParents);
         setSourceFileFields(sourceFile, scriptSnapshot, version);
@@ -40027,29 +40070,37 @@ var ts;
             return ts.NavigationBar.getNavigationBarItems(sourceFile);
         }
         function getSemanticClassifications(fileName, span) {
+            return convertClassifications(getEncodedSemanticClassifications(fileName, span));
+        }
+        function getEncodedSemanticClassifications(fileName, span) {
             synchronizeHostData();
             var sourceFile = getValidSourceFile(fileName);
             var typeChecker = program.getTypeChecker();
             var result = [];
             processNode(sourceFile);
-            return result;
+            return { spans: result, endOfLineState: 0 /* None */ };
+            function pushClassification(start, length, type) {
+                result.push(start);
+                result.push(length);
+                result.push(type);
+            }
             function classifySymbol(symbol, meaningAtPosition) {
                 var flags = symbol.getFlags();
                 if (flags & 32 /* Class */) {
-                    return ClassificationTypeNames.className;
+                    return 11 /* className */;
                 }
                 else if (flags & 384 /* Enum */) {
-                    return ClassificationTypeNames.enumName;
+                    return 12 /* enumName */;
                 }
                 else if (flags & 524288 /* TypeAlias */) {
-                    return ClassificationTypeNames.typeAlias;
+                    return 16 /* typeAliasName */;
                 }
                 else if (meaningAtPosition & 2 /* Type */) {
                     if (flags & 64 /* Interface */) {
-                        return ClassificationTypeNames.interfaceName;
+                        return 13 /* interfaceName */;
                     }
                     else if (flags & 262144 /* TypeParameter */) {
-                        return ClassificationTypeNames.typeParameterName;
+                        return 15 /* typeParameterName */;
                     }
                 }
                 else if (flags & 1536 /* Module */) {
@@ -40058,7 +40109,7 @@ var ts;
                     //  - There exists a module declaration which actually impacts the value side.
                     if (meaningAtPosition & 4 /* Namespace */ ||
                         (meaningAtPosition & 1 /* Value */ && hasValueSideModule(symbol))) {
-                        return ClassificationTypeNames.moduleName;
+                        return 14 /* moduleName */;
                     }
                 }
                 return undefined;
@@ -40079,10 +40130,7 @@ var ts;
                         if (symbol) {
                             var type = classifySymbol(symbol, getMeaningFromLocation(node));
                             if (type) {
-                                result.push({
-                                    textSpan: ts.createTextSpan(node.getStart(), node.getWidth()),
-                                    classificationType: type
-                                });
+                                pushClassification(node.getStart(), node.getWidth(), type);
                             }
                         }
                     }
@@ -40090,7 +40138,42 @@ var ts;
                 }
             }
         }
+        function getClassificationTypeName(type) {
+            switch (type) {
+                case 1 /* comment */: return ClassificationTypeNames.comment;
+                case 2 /* identifier */: return ClassificationTypeNames.identifier;
+                case 3 /* keyword */: return ClassificationTypeNames.keyword;
+                case 4 /* numericLiteral */: return ClassificationTypeNames.numericLiteral;
+                case 5 /* operator */: return ClassificationTypeNames.operator;
+                case 6 /* stringLiteral */: return ClassificationTypeNames.stringLiteral;
+                case 8 /* whiteSpace */: return ClassificationTypeNames.whiteSpace;
+                case 9 /* text */: return ClassificationTypeNames.text;
+                case 10 /* punctuation */: return ClassificationTypeNames.punctuation;
+                case 11 /* className */: return ClassificationTypeNames.className;
+                case 12 /* enumName */: return ClassificationTypeNames.enumName;
+                case 13 /* interfaceName */: return ClassificationTypeNames.interfaceName;
+                case 14 /* moduleName */: return ClassificationTypeNames.moduleName;
+                case 15 /* typeParameterName */: return ClassificationTypeNames.typeParameterName;
+                case 16 /* typeAliasName */: return ClassificationTypeNames.typeAliasName;
+                case 17 /* parameterName */: return ClassificationTypeNames.parameterName;
+            }
+        }
+        function convertClassifications(classifications) {
+            ts.Debug.assert(classifications.spans.length % 3 === 0);
+            var dense = classifications.spans;
+            var result = [];
+            for (var i = 0, n = dense.length; i < n; i += 3) {
+                result.push({
+                    textSpan: ts.createTextSpan(dense[i], dense[i + 1]),
+                    classificationType: getClassificationTypeName(dense[i + 2])
+                });
+            }
+            return result;
+        }
         function getSyntacticClassifications(fileName, span) {
+            return convertClassifications(getEncodedSyntacticClassifications(fileName, span));
+        }
+        function getEncodedSyntacticClassifications(fileName, span) {
             // doesn't use compiler - no need to synchronize with host
             var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             // Make a scanner we can get trivia from.
@@ -40098,7 +40181,12 @@ var ts;
             var mergeConflictScanner = ts.createScanner(2 /* Latest */, false, sourceFile.text);
             var result = [];
             processElement(sourceFile);
-            return result;
+            return { spans: result, endOfLineState: 0 /* None */ };
+            function pushClassification(start, length, type) {
+                result.push(start);
+                result.push(length);
+                result.push(type);
+            }
             function classifyLeadingTrivia(token) {
                 var tokenStart = ts.skipTrivia(sourceFile.text, token.pos, false);
                 if (tokenStart === token.pos) {
@@ -40117,10 +40205,7 @@ var ts;
                         }
                         if (ts.isComment(kind)) {
                             // Simple comment.  Just add as is.
-                            result.push({
-                                textSpan: ts.createTextSpan(start, width),
-                                classificationType: ClassificationTypeNames.comment
-                            });
+                            pushClassification(start, width, 1 /* comment */);
                             continue;
                         }
                         if (kind === 6 /* ConflictMarkerTrivia */) {
@@ -40129,10 +40214,7 @@ var ts;
                             // for the <<<<<<< and >>>>>>> markers, we just add them in as comments
                             // in the classification stream.
                             if (ch === 60 /* lessThan */ || ch === 62 /* greaterThan */) {
-                                result.push({
-                                    textSpan: ts.createTextSpan(start, width),
-                                    classificationType: ClassificationTypeNames.comment
-                                });
+                                pushClassification(start, width, 1 /* comment */);
                                 continue;
                             }
                             // for the ======== add a comment for the first line, and then lex all
@@ -40151,10 +40233,7 @@ var ts;
                         break;
                     }
                 }
-                result.push({
-                    textSpan: ts.createTextSpanFromBounds(start, i),
-                    classificationType: ClassificationTypeNames.comment
-                });
+                pushClassification(start, i - start, 1 /* comment */);
                 mergeConflictScanner.setTextPos(i);
                 while (mergeConflictScanner.getTextPos() < end) {
                     classifyDisabledCodeToken();
@@ -40166,10 +40245,7 @@ var ts;
                 var end = mergeConflictScanner.getTextPos();
                 var type = classifyTokenType(tokenKind);
                 if (type) {
-                    result.push({
-                        textSpan: ts.createTextSpanFromBounds(start, end),
-                        classificationType: type
-                    });
+                    pushClassification(start, end - start, type);
                 }
             }
             function classifyToken(token) {
@@ -40177,10 +40253,7 @@ var ts;
                 if (token.getWidth() > 0) {
                     var type = classifyTokenType(token.kind, token);
                     if (type) {
-                        result.push({
-                            textSpan: ts.createTextSpan(token.getStart(), token.getWidth()),
-                            classificationType: type
-                        });
+                        pushClassification(token.getStart(), token.getWidth(), type);
                     }
                 }
             }
@@ -40189,7 +40262,7 @@ var ts;
             // classify based on that instead.
             function classifyTokenType(tokenKind, token) {
                 if (ts.isKeyword(tokenKind)) {
-                    return ClassificationTypeNames.keyword;
+                    return 3 /* keyword */;
                 }
                 // Special case < and >  If they appear in a generic context they are punctuation,
                 // not operators.
@@ -40197,7 +40270,7 @@ var ts;
                     // If the node owning the token has a type argument list or type parameter list, then
                     // we can effectively assume that a '<' and '>' belong to those lists.
                     if (token && ts.getTypeArgumentOrTypeParameterList(token.parent)) {
-                        return ClassificationTypeNames.punctuation;
+                        return 10 /* punctuation */;
                     }
                 }
                 if (ts.isPunctuation(tokenKind)) {
@@ -40207,63 +40280,68 @@ var ts;
                             if (token.parent.kind === 199 /* VariableDeclaration */ ||
                                 token.parent.kind === 133 /* PropertyDeclaration */ ||
                                 token.parent.kind === 130 /* Parameter */) {
-                                return ClassificationTypeNames.operator;
+                                return 5 /* operator */;
                             }
                         }
                         if (token.parent.kind === 170 /* BinaryExpression */ ||
                             token.parent.kind === 168 /* PrefixUnaryExpression */ ||
                             token.parent.kind === 169 /* PostfixUnaryExpression */ ||
                             token.parent.kind === 171 /* ConditionalExpression */) {
-                            return ClassificationTypeNames.operator;
+                            return 5 /* operator */;
                         }
                     }
-                    return ClassificationTypeNames.punctuation;
+                    return 10 /* punctuation */;
                 }
                 else if (tokenKind === 7 /* NumericLiteral */) {
-                    return ClassificationTypeNames.numericLiteral;
+                    return 4 /* numericLiteral */;
                 }
                 else if (tokenKind === 8 /* StringLiteral */) {
-                    return ClassificationTypeNames.stringLiteral;
+                    return 6 /* stringLiteral */;
                 }
                 else if (tokenKind === 9 /* RegularExpressionLiteral */) {
                     // TODO: we should get another classification type for these literals.
-                    return ClassificationTypeNames.stringLiteral;
+                    return 6 /* stringLiteral */;
                 }
                 else if (ts.isTemplateLiteralKind(tokenKind)) {
                     // TODO (drosen): we should *also* get another classification type for these literals.
-                    return ClassificationTypeNames.stringLiteral;
+                    return 6 /* stringLiteral */;
                 }
                 else if (tokenKind === 65 /* Identifier */) {
                     if (token) {
                         switch (token.parent.kind) {
                             case 202 /* ClassDeclaration */:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.className;
+                                    return 11 /* className */;
                                 }
                                 return;
                             case 129 /* TypeParameter */:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.typeParameterName;
+                                    return 15 /* typeParameterName */;
                                 }
                                 return;
                             case 203 /* InterfaceDeclaration */:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.interfaceName;
+                                    return 13 /* interfaceName */;
                                 }
                                 return;
                             case 205 /* EnumDeclaration */:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.enumName;
+                                    return 12 /* enumName */;
                                 }
                                 return;
                             case 206 /* ModuleDeclaration */:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.moduleName;
+                                    return 14 /* moduleName */;
+                                }
+                                return;
+                            case 130 /* Parameter */:
+                                if (token.parent.name === token) {
+                                    return 17 /* parameterName */;
                                 }
                                 return;
                         }
                     }
-                    return ClassificationTypeNames.text;
+                    return 9 /* text */;
                 }
             }
             function processElement(element) {
@@ -40543,6 +40621,8 @@ var ts;
             getCompilerOptionsDiagnostics: getCompilerOptionsDiagnostics,
             getSyntacticClassifications: getSyntacticClassifications,
             getSemanticClassifications: getSemanticClassifications,
+            getEncodedSyntacticClassifications: getEncodedSyntacticClassifications,
+            getEncodedSemanticClassifications: getEncodedSemanticClassifications,
             getCompletionsAtPosition: getCompletionsAtPosition,
             getCompletionEntryDetails: getCompletionEntryDetails,
             getSignatureHelpItems: getSignatureHelpItems,
@@ -40671,9 +40751,58 @@ var ts;
             // if there are more cases we want the classifier to be better at.
             return true;
         }
+        function convertClassifications(classifications, text) {
+            var entries = [];
+            var dense = classifications.spans;
+            var lastEnd = 0;
+            for (var i = 0, n = dense.length; i < n; i += 3) {
+                var start = dense[i];
+                var length_1 = dense[i + 1];
+                var type = dense[i + 2];
+                // Make a whitespace entry between the last item and this one.
+                if (lastEnd >= 0) {
+                    var whitespaceLength_1 = start - lastEnd;
+                    if (whitespaceLength_1 > 0) {
+                        entries.push({ length: whitespaceLength_1, classification: TokenClass.Whitespace });
+                    }
+                }
+                entries.push({ length: length_1, classification: convertClassification(type) });
+                lastEnd = start + length_1;
+            }
+            var whitespaceLength = text.length - lastEnd;
+            if (whitespaceLength > 0) {
+                entries.push({ length: whitespaceLength, classification: TokenClass.Whitespace });
+            }
+            return { entries: entries, finalLexState: classifications.endOfLineState };
+        }
+        function convertClassification(type) {
+            switch (type) {
+                case 1 /* comment */: return TokenClass.Comment;
+                case 3 /* keyword */: return TokenClass.Keyword;
+                case 4 /* numericLiteral */: return TokenClass.NumberLiteral;
+                case 5 /* operator */: return TokenClass.Operator;
+                case 6 /* stringLiteral */: return TokenClass.StringLiteral;
+                case 8 /* whiteSpace */: return TokenClass.Whitespace;
+                case 10 /* punctuation */: return TokenClass.Punctuation;
+                case 2 /* identifier */:
+                case 11 /* className */:
+                case 12 /* enumName */:
+                case 13 /* interfaceName */:
+                case 14 /* moduleName */:
+                case 15 /* typeParameterName */:
+                case 16 /* typeAliasName */:
+                case 9 /* text */:
+                case 17 /* parameterName */:
+                default:
+                    return TokenClass.Identifier;
+            }
+        }
+        function getClassificationsForLine(text, lexState, syntacticClassifierAbsent) {
+            return convertClassifications(getEncodedLexicalClassifications(text, lexState, syntacticClassifierAbsent), text);
+        }
         // If there is a syntactic classifier ('syntacticClassifierAbsent' is false),
         // we will be more conservative in order to avoid conflicting with the syntactic classifier.
-        function getClassificationsForLine(text, lexState, syntacticClassifierAbsent) {
+        function getEncodedLexicalClassifications(text, lexState, syntacticClassifierAbsent) {
             var offset = 0;
             var token = 0 /* Unknown */;
             var lastNonTriviaToken = 0 /* Unknown */;
@@ -40713,8 +40842,8 @@ var ts;
             }
             scanner.setText(text);
             var result = {
-                finalLexState: 0 /* Start */,
-                entries: []
+                endOfLineState: 0 /* None */,
+                spans: []
             };
             // We can run into an unfortunate interaction between the lexical and syntactic classifier
             // when the user is typing something generic.  Consider the case where the user types:
@@ -40816,7 +40945,7 @@ var ts;
             function processToken() {
                 var start = scanner.getTokenPos();
                 var end = scanner.getTextPos();
-                addResult(end - start, classFromKind(token));
+                addResult(start, end, classFromKind(token));
                 if (end >= text.length) {
                     if (token === 8 /* StringLiteral */) {
                         // Check to see if we finished up on a multiline string literal.
@@ -40830,7 +40959,7 @@ var ts;
                             // If we have an odd number of backslashes, then the multiline string is unclosed
                             if (numBackslashes & 1) {
                                 var quoteChar = tokenText.charCodeAt(0);
-                                result.finalLexState = quoteChar === 34 /* doubleQuote */
+                                result.endOfLineState = quoteChar === 34 /* doubleQuote */
                                     ? 3 /* InDoubleQuoteStringLiteral */
                                     : 2 /* InSingleQuoteStringLiteral */;
                             }
@@ -40839,16 +40968,16 @@ var ts;
                     else if (token === 3 /* MultiLineCommentTrivia */) {
                         // Check to see if the multiline comment was unclosed.
                         if (scanner.isUnterminated()) {
-                            result.finalLexState = 1 /* InMultiLineCommentTrivia */;
+                            result.endOfLineState = 1 /* InMultiLineCommentTrivia */;
                         }
                     }
                     else if (ts.isTemplateLiteralKind(token)) {
                         if (scanner.isUnterminated()) {
                             if (token === 13 /* TemplateTail */) {
-                                result.finalLexState = 5 /* InTemplateMiddleOrTail */;
+                                result.endOfLineState = 5 /* InTemplateMiddleOrTail */;
                             }
                             else if (token === 10 /* NoSubstitutionTemplateLiteral */) {
-                                result.finalLexState = 4 /* InTemplateHeadOrNoSubstitutionTemplate */;
+                                result.endOfLineState = 4 /* InTemplateHeadOrNoSubstitutionTemplate */;
                             }
                             else {
                                 ts.Debug.fail("Only 'NoSubstitutionTemplateLiteral's and 'TemplateTail's can be unterminated; got SyntaxKind #" + token);
@@ -40856,18 +40985,30 @@ var ts;
                         }
                     }
                     else if (templateStack.length > 0 && ts.lastOrUndefined(templateStack) === 11 /* TemplateHead */) {
-                        result.finalLexState = 6 /* InTemplateSubstitutionPosition */;
+                        result.endOfLineState = 6 /* InTemplateSubstitutionPosition */;
                     }
                 }
             }
-            function addResult(length, classification) {
+            function addResult(start, end, classification) {
+                if (classification === 8 /* whiteSpace */) {
+                    // Don't bother with whitespace classifications.  They're not needed.
+                    return;
+                }
+                if (start === 0 && offset > 0) {
+                    // We're classifying the first token, and this was a case where we prepended 
+                    // text.  We should consider the start of this token to be at the start of 
+                    // the original text.
+                    start += offset;
+                }
+                // All our tokens are in relation to the augmented text.  Move them back to be
+                // relative to the original text.
+                start -= offset;
+                end -= offset;
+                var length = end - start;
                 if (length > 0) {
-                    // If this is the first classification we're adding to the list, then remove any 
-                    // offset we have if we were continuing a construct from the previous line.
-                    if (result.entries.length === 0) {
-                        length -= offset;
-                    }
-                    result.entries.push({ length: length, classification: classification });
+                    result.spans.push(start);
+                    result.spans.push(length);
+                    result.spans.push(classification);
                 }
             }
         }
@@ -40932,37 +41073,40 @@ var ts;
         }
         function classFromKind(token) {
             if (isKeyword(token)) {
-                return TokenClass.Keyword;
+                return 3 /* keyword */;
             }
             else if (isBinaryExpressionOperatorToken(token) || isPrefixUnaryExpressionOperatorToken(token)) {
-                return TokenClass.Operator;
+                return 5 /* operator */;
             }
             else if (token >= 14 /* FirstPunctuation */ && token <= 64 /* LastPunctuation */) {
-                return TokenClass.Punctuation;
+                return 10 /* punctuation */;
             }
             switch (token) {
                 case 7 /* NumericLiteral */:
-                    return TokenClass.NumberLiteral;
+                    return 4 /* numericLiteral */;
                 case 8 /* StringLiteral */:
-                    return TokenClass.StringLiteral;
+                    return 6 /* stringLiteral */;
                 case 9 /* RegularExpressionLiteral */:
-                    return TokenClass.RegExpLiteral;
+                    return 7 /* regularExpressionLiteral */;
                 case 6 /* ConflictMarkerTrivia */:
                 case 3 /* MultiLineCommentTrivia */:
                 case 2 /* SingleLineCommentTrivia */:
-                    return TokenClass.Comment;
+                    return 1 /* comment */;
                 case 5 /* WhitespaceTrivia */:
                 case 4 /* NewLineTrivia */:
-                    return TokenClass.Whitespace;
+                    return 8 /* whiteSpace */;
                 case 65 /* Identifier */:
                 default:
                     if (ts.isTemplateLiteralKind(token)) {
-                        return TokenClass.StringLiteral;
+                        return 6 /* stringLiteral */;
                     }
-                    return TokenClass.Identifier;
+                    return 2 /* identifier */;
             }
         }
-        return { getClassificationsForLine: getClassificationsForLine };
+        return {
+            getClassificationsForLine: getClassificationsForLine,
+            getEncodedLexicalClassifications: getEncodedLexicalClassifications
+        };
     }
     ts.createClassifier = createClassifier;
     /**
@@ -41461,7 +41605,9 @@ var debugObjectHost = this;
 var ts;
 (function (ts) {
     function logInternalError(logger, err) {
-        logger.log("*INTERNAL ERROR* - Exception in typescript services: " + err.message);
+        if (logger) {
+            logger.log("*INTERNAL ERROR* - Exception in typescript services: " + err.message);
+        }
     }
     var ScriptSnapshotShimAdapter = (function () {
         function ScriptSnapshotShimAdapter(scriptSnapshotShim) {
@@ -41565,24 +41711,28 @@ var ts;
         return CoreServicesShimHostAdapter;
     })();
     ts.CoreServicesShimHostAdapter = CoreServicesShimHostAdapter;
-    function simpleForwardCall(logger, actionDescription, action) {
-        logger.log(actionDescription);
-        var start = Date.now();
+    function simpleForwardCall(logger, actionDescription, action, noPerfLogging) {
+        if (!noPerfLogging) {
+            logger.log(actionDescription);
+            var start = Date.now();
+        }
         var result = action();
-        var end = Date.now();
-        logger.log(actionDescription + " completed in " + (end - start) + " msec");
-        if (typeof (result) === "string") {
-            var str = result;
-            if (str.length > 128) {
-                str = str.substring(0, 128) + "...";
+        if (!noPerfLogging) {
+            var end = Date.now();
+            logger.log(actionDescription + " completed in " + (end - start) + " msec");
+            if (typeof (result) === "string") {
+                var str = result;
+                if (str.length > 128) {
+                    str = str.substring(0, 128) + "...";
+                }
+                logger.log("  result.length=" + str.length + ", result='" + JSON.stringify(str) + "'");
             }
-            logger.log("  result.length=" + str.length + ", result='" + JSON.stringify(str) + "'");
         }
         return result;
     }
-    function forwardJSONCall(logger, actionDescription, action) {
+    function forwardJSONCall(logger, actionDescription, action, noPerfLogging) {
         try {
-            var result = simpleForwardCall(logger, actionDescription, action);
+            var result = simpleForwardCall(logger, actionDescription, action, noPerfLogging);
             return JSON.stringify({ result: result });
         }
         catch (err) {
@@ -41627,7 +41777,7 @@ var ts;
             this.logger = this.host;
         }
         LanguageServiceShimObject.prototype.forwardJSONCall = function (actionDescription, action) {
-            return forwardJSONCall(this.logger, actionDescription, action);
+            return forwardJSONCall(this.logger, actionDescription, action, false);
         };
         /// DISPOSE
         /**
@@ -41678,6 +41828,22 @@ var ts;
             return this.forwardJSONCall("getSemanticClassifications('" + fileName + "', " + start + ", " + length + ")", function () {
                 var classifications = _this.languageService.getSemanticClassifications(fileName, ts.createTextSpan(start, length));
                 return classifications;
+            });
+        };
+        LanguageServiceShimObject.prototype.getEncodedSyntacticClassifications = function (fileName, start, length) {
+            var _this = this;
+            return this.forwardJSONCall("getEncodedSyntacticClassifications('" + fileName + "', " + start + ", " + length + ")", function () {
+                // directly serialize the spans out to a string.  This is much faster to decode
+                // on the managed side versus a full JSON array.
+                return convertClassifications(_this.languageService.getEncodedSyntacticClassifications(fileName, ts.createTextSpan(start, length)));
+            });
+        };
+        LanguageServiceShimObject.prototype.getEncodedSemanticClassifications = function (fileName, start, length) {
+            var _this = this;
+            return this.forwardJSONCall("getEncodedSemanticClassifications('" + fileName + "', " + start + ", " + length + ")", function () {
+                // directly serialize the spans out to a string.  This is much faster to decode
+                // on the managed side versus a full JSON array.
+                return convertClassifications(_this.languageService.getEncodedSemanticClassifications(fileName, ts.createTextSpan(start, length)));
             });
         };
         LanguageServiceShimObject.prototype.getNewLine = function () {
@@ -41899,12 +42065,21 @@ var ts;
         };
         return LanguageServiceShimObject;
     })(ShimBase);
+    function convertClassifications(classifications) {
+        return { spans: classifications.spans.join(","), endOfLineState: classifications.endOfLineState };
+    }
     var ClassifierShimObject = (function (_super) {
         __extends(ClassifierShimObject, _super);
-        function ClassifierShimObject(factory) {
+        function ClassifierShimObject(factory, logger) {
             _super.call(this, factory);
+            this.logger = logger;
             this.classifier = ts.createClassifier();
         }
+        ClassifierShimObject.prototype.getEncodedLexicalClassifications = function (text, lexState, syntacticClassifierAbsent) {
+            var _this = this;
+            return forwardJSONCall(this.logger, "getEncodedLexicalClassifications", function () { return convertClassifications(_this.classifier.getEncodedLexicalClassifications(text, lexState, syntacticClassifierAbsent)); }, 
+            /*noPerfLogging:*/ true);
+        };
         /// COLORIZATION
         ClassifierShimObject.prototype.getClassificationsForLine = function (text, lexState, classifyKeywordsInGenerics) {
             var classification = this.classifier.getClassificationsForLine(text, lexState, classifyKeywordsInGenerics);
@@ -41927,7 +42102,7 @@ var ts;
             this.host = host;
         }
         CoreServicesShimObject.prototype.forwardJSONCall = function (actionDescription, action) {
-            return forwardJSONCall(this.logger, actionDescription, action);
+            return forwardJSONCall(this.logger, actionDescription, action, false);
         };
         CoreServicesShimObject.prototype.getPreProcessedFileInfo = function (fileName, sourceTextSnapshot) {
             return this.forwardJSONCall("getPreProcessedFileInfo('" + fileName + "')", function () {
@@ -42005,7 +42180,7 @@ var ts;
         };
         TypeScriptServicesFactory.prototype.createClassifierShim = function (logger) {
             try {
-                return new ClassifierShimObject(this);
+                return new ClassifierShimObject(this, logger);
             }
             catch (err) {
                 logInternalError(logger, err);
@@ -42042,9 +42217,6 @@ var ts;
         return TypeScriptServicesFactory;
     })();
     ts.TypeScriptServicesFactory = TypeScriptServicesFactory;
-    if (typeof module !== "undefined" && module.exports) {
-        module.exports = ts;
-    }
 })(ts || (ts = {}));
 /// TODO: this is used by VS, clean this up on both sides of the interface
 /* @internal */
